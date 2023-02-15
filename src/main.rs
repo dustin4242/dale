@@ -4,8 +4,8 @@ use std::{env, fs, io::Write, process::exit};
 struct Screen {
     line_top: usize,
     line_bottom: usize,
-    top: bool,
-    bottom: bool,
+    offscreen_top: bool,
+    offscreen_bottom: bool,
 }
 
 fn main() {
@@ -36,8 +36,8 @@ fn main() {
         } else {
             term.size().0 as usize
         },
-        top: false,
-        bottom: false,
+        offscreen_top: false,
+        offscreen_bottom: false,
     };
     term.clear_screen().unwrap();
     term.write_all(
@@ -106,12 +106,12 @@ fn main() {
         }
         term.clear_screen().unwrap();
         if screen.line_top > line {
-            screen.top = true;
+            screen.offscreen_top = true;
         }
         if screen.line_bottom < line {
-            screen.bottom = true;
+            screen.offscreen_bottom = true;
         }
-        match (screen.top, screen.bottom) {
+        match (screen.offscreen_top, screen.offscreen_bottom) {
             (true, _) => {
                 screen.line_top -= 1;
                 screen.line_bottom -= 1;
@@ -140,7 +140,7 @@ fn main() {
             .unwrap();
         }
         term.move_cursor_to(pos, line - screen.line_top).unwrap();
-        screen.top = false;
-        screen.bottom = false;
+        screen.offscreen_top = false;
+        screen.offscreen_bottom = false;
     }
 }
