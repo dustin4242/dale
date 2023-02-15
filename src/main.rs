@@ -12,12 +12,15 @@ fn main() {
     let file_path = format!(
         "{}/{}",
         env::current_dir().unwrap().to_str().unwrap(),
-        env::args().nth(1).unwrap()
+        match env::args().nth(1) {
+            Some(x) => x,
+            None => panic!("Didn't Supply A File To Edit"),
+        }
     );
 
     let mut file: Vec<String> = match fs::read_to_string(file_path.to_owned()) {
         Ok(x) => x,
-        Err(e) => panic!("{}", e),
+        Err(_e) => panic!("File Supplied Doesn't Exist"),
     }
     .split("\n")
     .map(|x| x.to_string())
