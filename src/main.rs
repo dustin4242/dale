@@ -17,7 +17,6 @@ fn main() {
             None => panic!("Didn't Supply A File To Edit"),
         }
     );
-
     let mut file: Vec<String> = match fs::read_to_string(file_path.to_owned()) {
         Ok(x) => x,
         Err(_e) => panic!("File Supplied Doesn't Exist"),
@@ -25,6 +24,7 @@ fn main() {
     .split("\n")
     .map(|x| x.to_string())
     .collect();
+
     let mut term = Term::stdout();
     let mut line = 0;
     let mut pos = file[0].len();
@@ -76,13 +76,17 @@ fn main() {
                 console::Key::ArrowUp => {
                     if line != 0 {
                         line -= 1;
-                        pos = file[line].len();
+                        if file[line].len() < pos {
+                            pos = file[line].len();
+                        }
                     }
                 }
                 console::Key::ArrowDown => {
                     if line + 1 != file.len() {
                         line += 1;
-                        pos = file[line].len();
+                        if file[line].len() < pos {
+                            pos = file[line].len();
+                        }
                     }
                 }
                 console::Key::ArrowRight => {
