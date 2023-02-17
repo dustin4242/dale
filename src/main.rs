@@ -4,8 +4,6 @@ use std::{env, fs, io::Write, process::exit};
 struct Screen {
     line_top: usize,
     line_bottom: usize,
-    offscreen_top: bool,
-    offscreen_bottom: bool,
 }
 
 fn main() {
@@ -36,8 +34,6 @@ fn main() {
         } else {
             term.size().0 as usize
         },
-        offscreen_top: false,
-        offscreen_bottom: false,
     };
     term.clear_screen().unwrap();
     term.write_all(
@@ -109,13 +105,11 @@ fn main() {
             Err(x) => panic!("{}", x),
         }
         term.clear_screen().unwrap();
-        if screen.line_top > line {
-            screen.offscreen_top = true;
+        if term.size().0 as usize >= file.len() || screen.line_bottom >= file.len() {
+            screen.line_top = 0;
+            screen.line_bottom = file.len();
         }
-        if screen.line_bottom < line {
-            screen.offscreen_bottom = true;
-        }
-        match (screen.offscreen_top, screen.offscreen_bottom) {
+        match (screen.line_top > line, screen.line_bottom <= line) {
             (true, _) => {
                 screen.line_top -= 1;
                 screen.line_bottom -= 1;
@@ -126,25 +120,12 @@ fn main() {
             }
             (false, false) => (),
         };
-        if term.size().0 as usize >= file.len() || screen.line_bottom >= file.len() {
-            screen.line_top = 0;
-            screen.line_bottom = file.len();
-            term.write_all(
-                file[screen.line_top..screen.line_bottom]
-                    .join("\n")
-                    .as_bytes(),
-            )
-            .unwrap();
-        } else {
-            term.write_all(
-                file[screen.line_top + 1..screen.line_bottom + 1]
-                    .join("\n")
-                    .as_bytes(),
-            )
-            .unwrap();
-        }
+        term.write_all(
+            file[screen.line_top..screen.line_bottom]
+                .join("\n")
+                .as_bytes(),
+        )
+        .unwrap();
         term.move_cursor_to(pos, line - screen.line_top).unwrap();
-        screen.offscreen_top = false;
-        screen.offscreen_bottom = false;
     }
 }
