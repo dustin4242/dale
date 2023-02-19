@@ -1,15 +1,19 @@
 use console::Term;
-use std::{env, fs, io::Write, process::exit};
+use std::{
+    env, fs,
+    io::{Error, Write},
+    process::exit,
+};
 
 struct Screen {
     line_top: usize,
     line_bottom: usize,
 }
 
-fn main() {
+fn main() -> Result<(), Error> {
     let file_path = format!(
         "{}/{}",
-        env::current_dir().unwrap().to_str().unwrap(),
+        env::current_dir()?.to_str().unwrap(),
         match env::args().nth(1) {
             Some(x) => x,
             None => panic!("Didn't Supply A File To Edit"),
@@ -35,14 +39,13 @@ fn main() {
             term.size().0 as usize
         },
     };
-    term.clear_screen().unwrap();
+    term.clear_screen()?;
     term.write_all(
         file[screen.line_top..screen.line_bottom]
             .join("\n")
             .as_bytes(),
-    )
-    .unwrap();
-    term.move_cursor_to(pos, line).unwrap();
+    )?;
+    term.move_cursor_to(pos, line)?;
     loop {
         match term.read_key() {
             Ok(console::Key::Char(x)) => {
@@ -104,7 +107,7 @@ fn main() {
             },
             Err(x) => panic!("{}", x),
         }
-        term.clear_screen().unwrap();
+        term.clear_screen()?;
         if term.size().0 as usize >= file.len() || screen.line_bottom >= file.len() {
             screen.line_top = 0;
             screen.line_bottom = file.len();
@@ -124,8 +127,7 @@ fn main() {
             file[screen.line_top..screen.line_bottom]
                 .join("\n")
                 .as_bytes(),
-        )
-        .unwrap();
-        term.move_cursor_to(pos, line - screen.line_top).unwrap();
+        )?;
+        term.move_cursor_to(pos, line - screen.line_top)?;
     }
 }
