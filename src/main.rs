@@ -54,18 +54,23 @@ fn main() -> Result<(), Error> {
             }
             Ok(x) => match x {
                 console::Key::Backspace => {
-                    if line != 0 && file[line] == "".to_string() {
+                    if line != 0 && pos == 0 {
+                        pos = file[line].len() + 1;
+                        let currentline = file[line].clone();
+                        file[line - 1].push_str(currentline.as_str());
                         file.remove(line);
                         line -= 1;
-                        pos = file[line].len();
-                    } else if file[line] != "".to_string() {
+                    } else {
                         file[line].remove(pos - 1);
                         pos -= 1;
                     }
                 }
                 console::Key::Enter => {
+                    let currentline = file[line].clone();
+                    let newlines = currentline.split_at(pos);
+                    file[line] = newlines.0.to_string();
+                    file.insert(line + 1, newlines.1.to_string());
                     line += 1;
-                    file.insert(line, "".to_string());
                     pos = 0;
                 }
                 console::Key::Tab => {
