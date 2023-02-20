@@ -55,7 +55,7 @@ fn main() -> Result<(), Error> {
             Ok(x) => match x {
                 console::Key::Backspace => {
                     if line != 0 && pos == 0 {
-                        pos = file[line].len() + 1;
+                        pos = file[line - 1].len();
                         let currentline = file[line].clone();
                         file[line - 1].push_str(currentline.as_str());
                         file.remove(line);
