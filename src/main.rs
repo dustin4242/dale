@@ -81,7 +81,7 @@ fn main() -> Result<(), Error> {
                     }
                 }
                 console::Key::ArrowDown => {
-                    if line + 1 != file.len() {
+                    if line + 1 < file.len() {
                         line += 1;
                         if file[line].len() < pos {
                             pos = file[line].len();
@@ -108,7 +108,7 @@ fn main() -> Result<(), Error> {
             Err(x) => panic!("{}", x),
         }
         term.clear_screen()?;
-        if term.size().0 as usize >= file.len() || screen.line_bottom >= file.len() {
+        if term.size().0 as usize >= file.len() {
             screen.line_top = 0;
             screen.line_bottom = file.len();
         }
