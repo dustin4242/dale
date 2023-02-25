@@ -5,10 +5,10 @@ use std::{
 };
 
 struct Screen {
-    line_top: usize,
-    line_bottom: usize,
     line: usize,
     pos: usize,
+    line_top: usize,
+    line_bottom: usize,
 }
 
 fn main() -> Result<(), Error> {
@@ -25,16 +25,16 @@ fn main() -> Result<(), Error> {
 
     let mut term = Term::stdout();
     let mut screen = Screen {
+        line: 0,
+        pos: file[0].len(),
         line_top: 0,
         line_bottom: if file.len() < term.size().0 as usize {
             file.len()
         } else {
             term.size().0 as usize
         },
-        line: 0,
-        pos: file[0].len(),
     };
-    write_screen((&mut term, &screen), &file)?;
+    write_screen(&mut term, &screen, &file)?;
     loop {
         match term.read_key() {
             Ok(console::Key::Char(x)) => {
@@ -117,12 +117,12 @@ fn main() -> Result<(), Error> {
             }
             (false, false) => (),
         };
-        write_screen((&mut term, &screen), &file)?;
+        write_screen(&mut term, &screen, &file)?;
     }
 }
 
 // Seperated Functions
-fn write_screen((term, screen): (&mut Term, &Screen), file: &Vec<String>) -> Result<(), Error> {
+fn write_screen(term: &mut Term, screen: &Screen, file: &Vec<String>) -> Result<(), Error> {
     term.clear_screen()?;
     term.write_all(
         file[screen.line_top..screen.line_bottom]
