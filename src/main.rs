@@ -2,7 +2,6 @@ use console::Term;
 use std::{
     env, fs,
     io::{Error, Write},
-    process::exit,
 };
 
 struct Screen {
@@ -96,7 +95,8 @@ fn main() -> Result<(), Error> {
             }
             Ok(console::Key::Escape) => {
                 fs::write(file_path, file.join("\n")).expect("Was Unable To Save File Contents");
-                exit(0)
+                term.clear_screen()?;
+                return Ok(());
             }
             Err(x) => panic!("{}", x),
             _ => (),
