@@ -37,7 +37,7 @@ fn main() -> Result<(), Error> {
     write_screen(&mut term, &screen, &file);
     loop {
         match term.read_key()? {
-            console::Key::Char(x) => write_char(&mut screen, &mut file, x),
+            console::Key::Char(x) => add_char(&mut screen, &mut file, x),
             console::Key::Backspace => remove_char(&mut screen, &mut file),
             console::Key::Enter => create_newline(&mut screen, &mut file),
             console::Key::Tab => {
@@ -100,30 +100,31 @@ fn main() -> Result<(), Error> {
 }
 
 // Seperated Functions
-fn write_char(screen: &mut Screen, file: &mut Vec<String>, char: char) {
+fn add_char(screen: &mut Screen, file: &mut Vec<String>, char: char) {
     file[screen.line].insert(screen.pos, char);
     screen.pos += 1;
-}
-fn create_newline(screen: &mut Screen, file: &mut Vec<String>) {
-    let currentline = file[screen.line].clone();
-    let newlines = currentline.split_at(screen.pos);
-    file[screen.line] = newlines.0.to_string();
-    file.insert(screen.line + 1, newlines.1.to_string());
-    screen.line += 1;
-    screen.pos = 0;
 }
 
 fn remove_char(screen: &mut Screen, file: &mut Vec<String>) {
     if screen.line != 0 && screen.pos == 0 {
+        let current_line = file[screen.line].clone();
         screen.pos = file[screen.line - 1].len();
-        let currentline = file[screen.line].clone();
-        file[screen.line - 1].push_str(currentline.as_str());
+        file[screen.line - 1].push_str(current_line.as_str());
         file.remove(screen.line);
         screen.line -= 1;
     } else {
         file[screen.line].remove(screen.pos - 1);
         screen.pos -= 1;
     }
+}
+
+fn create_newline(screen: &mut Screen, file: &mut Vec<String>) {
+    let current_line = file[screen.line].clone();
+    let new_lines = current_line.split_at(screen.pos);
+    file[screen.line] = new_lines.0.to_string();
+    file.insert(screen.line + 1, new_lines.1.to_string());
+    screen.line += 1;
+    screen.pos = 0;
 }
 
 fn write_screen(term: &mut Term, screen: &Screen, file: &Vec<String>) {
