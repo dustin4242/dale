@@ -34,7 +34,7 @@ fn main() -> Result<(), Error> {
             term.size().0 as usize
         },
     };
-    write_screen(&mut term, &screen, &file)?;
+    write_screen(&mut term, &screen, &file);
     loop {
         match term.read_key() {
             Ok(console::Key::Char(x)) => {
@@ -117,18 +117,19 @@ fn main() -> Result<(), Error> {
             }
             (false, false) => (),
         };
-        write_screen(&mut term, &screen, &file)?;
+        write_screen(&mut term, &screen, &file);
     }
 }
 
 // Seperated Functions
-fn write_screen(term: &mut Term, screen: &Screen, file: &Vec<String>) -> Result<(), Error> {
-    term.clear_screen()?;
+fn write_screen(term: &mut Term, screen: &Screen, file: &Vec<String>) {
+    term.clear_screen().unwrap();
     term.write_all(
         file[screen.line_top..screen.line_bottom]
             .join("\n")
             .as_bytes(),
-    )?;
-    term.move_cursor_to(screen.pos, screen.line - screen.line_top)?;
-    Ok(())
+    )
+    .unwrap();
+    term.move_cursor_to(screen.pos, screen.line - screen.line_top)
+        .unwrap();
 }
