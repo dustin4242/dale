@@ -13,21 +13,16 @@ fn main() -> Result<(), Error> {
     let file_path = format!(
         "{}/{}",
         env::current_dir()?.to_str().unwrap(),
-        match env::args().nth(1) {
-            Some(x) => x,
-            None => panic!("Didn't Supply A File To Edit"),
-        }
+        env::args().nth(1).expect("Didn't Supply A File To Edit")
     );
-    let mut file: Vec<String> = match fs::read_to_string(file_path.to_owned()) {
-        Ok(x) => x,
-        Err(_e) => panic!("File Supplied Doesn't Exist"),
-    }
-    .split("\n")
-    .map(|x| x.to_string())
-    .collect();
+    let mut file: Vec<String> = fs::read_to_string(file_path.to_owned())
+        .expect("File Supplied Doesnt Exist")
+        .split("\n")
+        .map(|x| x.to_string())
+        .collect();
 
-    let mut term = Term::stdout();
     let (mut line, mut pos) = (0, file[0].len());
+    let mut term = Term::stdout();
     let mut screen = Screen {
         line_top: 0,
         line_bottom: if file.len() < term.size().0 as usize {
