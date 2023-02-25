@@ -7,6 +7,8 @@ use std::{
 struct Screen {
     line_top: usize,
     line_bottom: usize,
+    line: usize,
+    pos: usize,
 }
 
 fn main() -> Result<(), Error> {
@@ -21,7 +23,6 @@ fn main() -> Result<(), Error> {
         .map(|x| x.to_string())
         .collect();
 
-    let (mut line, mut pos) = (0, file[0].len());
     let mut term = Term::stdout();
     let mut screen = Screen {
         line_top: 0,
@@ -30,62 +31,64 @@ fn main() -> Result<(), Error> {
         } else {
             term.size().0 as usize
         },
+        line: 0,
+        pos: file[0].len(),
     };
-    write_screen((&mut term, &screen), (line, pos), &file)?;
+    write_screen((&mut term, &screen), &file)?;
     loop {
         match term.read_key() {
             Ok(console::Key::Char(x)) => {
-                file[line].insert(pos, x);
-                pos += 1;
+                file[screen.line].insert(screen.pos, x);
+                screen.pos += 1;
             }
             Ok(console::Key::Backspace) => {
-                if line != 0 && pos == 0 {
-                    pos = file[line - 1].len();
-                    let currentline = file[line].clone();
-                    file[line - 1].push_str(currentline.as_str());
-                    file.remove(line);
-                    line -= 1;
+                if screen.line != 0 && screen.pos == 0 {
+                    screen.pos = file[screen.line - 1].len();
+                    let currentline = file[screen.line].clone();
+                    file[screen.line - 1].push_str(currentline.as_str());
+                    file.remove(screen.line);
+                    screen.line -= 1;
                 } else {
-                    file[line].remove(pos - 1);
-                    pos -= 1;
+                    file[screen.line].remove(screen.pos - 1);
+                    screen.pos -= 1;
                 }
             }
             Ok(console::Key::Enter) => {
-                let currentline = file[line].clone();
-                let newlines = currentline.split_at(pos);
-                file[line] = newlines.0.to_string();
-                file.insert(line + 1, newlines.1.to_string());
-                line += 1;
-                pos = 0;
+                let currentline = file[screen.line].clone();
+                let newlines = currentline.split_at(screen.pos);
+                file[screen.line] = newlines.0.to_string();
+                file.insert(screen.line + 1, newlines.1.to_string());
+                screen.line += 1;
+                screen.pos = 0;
             }
             Ok(console::Key::Tab) => {
-                file[line].push_str("    ");
-                pos += 4;
+                file[screen.line].push_str("    ");
+                screen.pos += 4;
             }
             Ok(console::Key::ArrowUp) => {
-                if line != 0 {
-                    line -= 1;
-                    if file[line].len() < pos {
-                        pos = file[line].len();
+                if screen.line != 0 {
+                    screen.line -= 1;
+                    if file[screen.line].len() < screen.pos {
+                        screen.pos = file[screen.line].len();
                     }
                 }
             }
             Ok(console::Key::ArrowDown) => {
-                if line + 1 < file.len() {
-                    line += 1;
-                    if file[line].len() < pos {
-                        pos = file[line].len();
+                if screen.line + 1 < file.len() {
+                    screen.line += 1;
+                    if file[screen.line].len() < screen.pos {
+                        screen.pos = file[screen.line].len();
                     }
                 }
             }
             Ok(console::Key::ArrowRight) => {
-                if pos != file[line].len() {
-                    pos += 1;
+                if screen.pos != file[screen.line].len() {
+                    screen.pos += 1;
                 }
             }
             Ok(console::Key::ArrowLeft) => {
-                if pos != 0 {
-                    pos -= 1;
+                if screen.pos != 0 {
+                    screen.pos -= 1;
                 }
             }
             Ok(console::Key::Escape) => {
@@ -100,7 +103,10 @@ fn main() -> Result<(), Error> {
             screen.line_top = 0;
             screen.line_bottom = file.len();
         }
-        match (screen.line_top > line, screen.line_bottom <= line) {
+        match (
+            screen.line_top > screen.line,
+            screen.line_bottom <= screen.line,
+        ) {
             (true, _) => {
                 screen.line_top -= 1;
                 screen.line_bottom -= 1;
@@ -111,22 +117,18 @@ fn main() -> Result<(), Error> {
             }
             (false, false) => (),
         };
-        write_screen((&mut term, &screen), (line, pos), &file)?;
+        write_screen((&mut term, &screen), &file)?;
     }
 }
 
 // Seperated Functions
-fn write_screen(
-    (term, screen): (&mut Term, &Screen),
-    (line, pos): (usize, usize),
-    file: &Vec<String>,
-) -> Result<(), Error> {
+fn write_screen((term, screen): (&mut Term, &Screen), file: &Vec<String>) -> Result<(), Error> {
     term.clear_screen()?;
     term.write_all(
         file[screen.line_top..screen.line_bottom]
             .join("\n")
             .as_bytes(),
     )?;
-    term.move_cursor_to(pos, line - screen.line_top)?;
+    term.move_cursor_to(screen.pos, screen.line - screen.line_top)?;
     Ok(())
 }
