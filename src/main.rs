@@ -36,36 +36,15 @@ fn main() -> Result<(), Error> {
     };
     write_screen(&mut term, &screen, &file);
     loop {
-        match term.read_key() {
-            Ok(console::Key::Char(x)) => {
-                file[screen.line].insert(screen.pos, x);
-                screen.pos += 1;
-            }
-            Ok(console::Key::Backspace) => {
-                if screen.line != 0 && screen.pos == 0 {
-                    screen.pos = file[screen.line - 1].len();
-                    let currentline = file[screen.line].clone();
-                    file[screen.line - 1].push_str(currentline.as_str());
-                    file.remove(screen.line);
-                    screen.line -= 1;
-                } else {
-                    file[screen.line].remove(screen.pos - 1);
-                    screen.pos -= 1;
-                }
-            }
-            Ok(console::Key::Enter) => {
-                let currentline = file[screen.line].clone();
-                let newlines = currentline.split_at(screen.pos);
-                file[screen.line] = newlines.0.to_string();
-                file.insert(screen.line + 1, newlines.1.to_string());
-                screen.line += 1;
-                screen.pos = 0;
-            }
-            Ok(console::Key::Tab) => {
+        match term.read_key()? {
+            console::Key::Char(x) => write_char(&mut screen, &mut file, x),
+            console::Key::Backspace => remove_char(&mut screen, &mut file),
+            console::Key::Enter => create_newline(&mut screen, &mut file),
+            console::Key::Tab => {
                 file[screen.line].push_str("    ");
                 screen.pos += 4;
             }
-            Ok(console::Key::ArrowUp) => {
+            console::Key::ArrowUp => {
                 if screen.line != 0 {
                     screen.line -= 1;
                     if file[screen.line].len() < screen.pos {
@@ -73,7 +52,7 @@ fn main() -> Result<(), Error> {
                     }
                 }
             }
-            Ok(console::Key::ArrowDown) => {
+            console::Key::ArrowDown => {
                 if screen.line + 1 < file.len() {
                     screen.line += 1;
                     if file[screen.line].len() < screen.pos {
@@ -81,22 +60,21 @@ fn main() -> Result<(), Error> {
                     }
                 }
             }
-            Ok(console::Key::ArrowRight) => {
+            console::Key::ArrowRight => {
                 if screen.pos != file[screen.line].len() {
                     screen.pos += 1;
                 }
             }
-            Ok(console::Key::ArrowLeft) => {
+            console::Key::ArrowLeft => {
                 if screen.pos != 0 {
                     screen.pos -= 1;
                 }
             }
-            Ok(console::Key::Escape) => {
+            console::Key::Escape => {
                 fs::write(file_path, file.join("\n")).expect("Was Unable To Save File Contents");
                 term.clear_screen()?;
                 return Ok(());
             }
-            Err(x) => panic!("{}", x),
             _ => (),
         }
         if term.size().0 as usize >= file.len() {
@@ -122,6 +100,32 @@ fn main() -> Result<(), Error> {
 }
 
 // Seperated Functions
+fn write_char(screen: &mut Screen, file: &mut Vec<String>, char: char) {
+    file[screen.line].insert(screen.pos, char);
+    screen.pos += 1;
+}
+fn create_newline(screen: &mut Screen, file: &mut Vec<String>) {
+    let currentline = file[screen.line].clone();
+    let newlines = currentline.split_at(screen.pos);
+    file[screen.line] = newlines.0.to_string();
+    file.insert(screen.line + 1, newlines.1.to_string());
+    screen.line += 1;
+    screen.pos = 0;
+}
+
+fn remove_char(screen: &mut Screen, file: &mut Vec<String>) {
+    if screen.line != 0 && screen.pos == 0 {
+        screen.pos = file[screen.line - 1].len();
+        let currentline = file[screen.line].clone();
+        file[screen.line - 1].push_str(currentline.as_str());
+        file.remove(screen.line);
+        screen.line -= 1;
+    } else {
+        file[screen.line].remove(screen.pos - 1);
+        screen.pos -= 1;
+    }
+}
+
 fn write_screen(term: &mut Term, screen: &Screen, file: &Vec<String>) {
     term.clear_screen().unwrap();
     term.write_all(
