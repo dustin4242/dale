@@ -37,6 +37,11 @@ fn main() -> Result<(), Error> {
     write_screen(&mut term, &screen, &file);
     loop {
         match term.read_key()? {
+            console::Key::UnknownEscSeq(x) => match x[0].to_string().as_str() {
+                "s" => fs::write(&file_path, file.join("\n"))
+                    .expect("Was Unable To Save File Contents"),
+                _ => (),
+            },
             console::Key::Char(x) => add_char(&mut screen, &mut file, x),
             console::Key::Backspace => remove_char(&mut screen, &mut file),
             console::Key::Enter => create_newline(&mut screen, &mut file),
@@ -71,7 +76,6 @@ fn main() -> Result<(), Error> {
                 }
             }
             console::Key::Escape => {
-                fs::write(file_path, file.join("\n")).expect("Was Unable To Save File Contents");
                 term.clear_screen()?;
                 return Ok(());
             }
