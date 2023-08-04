@@ -32,6 +32,7 @@ fn main() -> Result<(), Error> {
     };
     let mut file: Vec<String> = fs::read_to_string(file_path.to_owned())
         .expect(format!("File Supplied Doesnt Exist: {}", file_path).as_str())
+        .replace("\t", "    ")
         .split("\n")
         .map(|x| x.to_string())
         .collect();
