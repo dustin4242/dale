@@ -14,13 +14,24 @@ struct Screen {
 }
 
 fn main() -> Result<(), Error> {
-    let file_path = format!(
-        "{}/{}",
-        env::current_dir()?.to_str().unwrap(),
-        env::args().nth(1).expect("Didn't Supply A File To Edit")
-    );
+    let mut temp_path = env::args().nth(1).expect("Didn't Supply A File To Edit");
+    let isrootdir = temp_path.starts_with("/");
+    let ishomedir = temp_path.starts_with("~");
+    println!("{}", temp_path);
+    let file_path = if isrootdir {
+        temp_path
+    } else if ishomedir {
+        temp_path.remove(0);
+        format!(
+            "{}/{}",
+            env::var("HOME").expect("You Do Not Have A HOME Path Set In Env"),
+            temp_path
+        )
+    } else {
+        format!("{}/{}", env::current_dir()?.to_str().unwrap(), temp_path)
+    };
     let mut file: Vec<String> = fs::read_to_string(file_path.to_owned())
-        .expect("File Supplied Doesnt Exist")
+        .expect(format!("File Supplied Doesnt Exist: {}", file_path).as_str())
         .split("\n")
         .map(|x| x.to_string())
         .collect();
@@ -31,7 +42,7 @@ fn main() -> Result<(), Error> {
         pos: file[0].len(),
         line_top: 0,
         line_bottom: if file.len() < term.size().0 as usize {
-            file.len() - 1
+            file.len()
         } else {
             term.size().0 as usize - 1
         },
@@ -41,7 +52,7 @@ fn main() -> Result<(), Error> {
     loop {
         if term.size().0 as usize >= file.len() {
             screen.line_top = 0;
-            screen.line_bottom = file.len() - 1;
+            screen.line_bottom = file.len();
         }
         match (
             screen.line_top > screen.line,
@@ -91,16 +102,16 @@ fn create_newline(screen: &mut Screen, file: &mut Vec<String>) {
 }
 
 fn write_screen(term: &mut Term, screen: &Screen, file: &Vec<String>) {
+    let size = term.size();
     term.clear_screen().unwrap();
     term.write_all(
-        file[screen.line_top..screen.line_bottom]
-            .join("\n")
-            .as_bytes(),
+        format!("\n{}", file[screen.line_top..screen.line_bottom].join("\n")).as_bytes(),
     )
     .unwrap();
-    let rest_of_screen = (term.size().1 as usize)
+    let rest_of_screen = (size.1 as usize)
         .checked_sub(screen.info_line.len())
         .unwrap();
+    term.move_cursor_to(0, (size.0 - 1) as usize).unwrap();
     term.write_all(
         format!(
             "\x1b[41m\x1b[30m\n{}{}\x1b[37m\x1b[40m",
