@@ -47,7 +47,7 @@ fn main() -> Result<(), Error> {
         } else {
             term.size().0 as usize - 1
         },
-        info_line: file_path.to_owned(),
+        info_line: file_path.split("/").last().unwrap().to_owned(),
     };
     write_screen(&mut term, &screen, &file);
     loop {
@@ -111,7 +111,7 @@ fn write_screen(term: &mut Term, screen: &Screen, file: &Vec<String>) {
     .unwrap();
     let rest_of_screen = (size.1 as usize)
         .checked_sub(screen.info_line.len())
-        .unwrap();
+        .unwrap_or(screen.info_line.len());
     term.move_cursor_to(0, (size.0 - 1) as usize).unwrap();
     term.write_all(
         format!(
