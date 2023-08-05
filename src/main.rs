@@ -1,10 +1,10 @@
 use console::Term;
-use std::{env, fs, io::Error};
+use std::{env, fs};
 
 mod screen;
 use screen::Screen;
 
-fn main() -> Result<(), Error> {
+fn main() {
     let mut temp_path = env::args().nth(1).expect("Didn't Supply A File To Edit");
     let isrootdir = temp_path.starts_with("/");
     let ishomedir = temp_path.starts_with("~");
@@ -18,7 +18,11 @@ fn main() -> Result<(), Error> {
             temp_path
         )
     } else {
-        format!("{}/{}", env::current_dir()?.to_str().unwrap(), temp_path)
+        format!(
+            "{}/{}",
+            env::current_dir().unwrap().to_str().unwrap(),
+            temp_path
+        )
     };
     let mut file: Vec<String> = fs::read_to_string(file_path.to_owned())
         .expect(format!("File Supplied Doesnt Exist: {}", file_path).as_str())
