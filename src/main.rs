@@ -5,17 +5,16 @@ mod screen;
 use screen::Screen;
 
 fn main() {
-    let mut temp_path = env::args().nth(1).expect("Didn't Supply A File To Edit");
+    let temp_path = env::args().nth(1).expect("Didn't Supply A File To Edit");
     let isrootdir = temp_path.starts_with("/");
     let ishomedir = temp_path.starts_with("~");
     let file_path = if isrootdir {
         temp_path
     } else if ishomedir {
-        temp_path.remove(0);
         format!(
             "{}/{}",
             env::var("HOME").expect("You Do Not Have A HOME Path Set In Env"),
-            temp_path
+            temp_path.get(1..).unwrap(),
         )
     } else {
         format!(
