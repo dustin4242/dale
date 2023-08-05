@@ -34,9 +34,6 @@ fn main() {
 
     let mut term = Term::stdout();
     let mut screen = Screen::new(
-        0,
-        0,
-        0,
         match file.len() < term.size().0 as usize - 1 {
             true => file.len(),
             false => term.size().0 as usize - 1,

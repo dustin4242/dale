@@ -10,17 +10,11 @@ pub struct Screen {
 }
 
 impl Screen {
-    pub fn new(
-        line: usize,
-        pos: usize,
-        line_top: usize,
-        line_bottom: usize,
-        info_line: String,
-    ) -> Screen {
+    pub fn new(line_bottom: usize, info_line: String) -> Screen {
         Screen {
-            line,
-            pos,
-            line_top,
+            line: 0,
+            pos: 0,
+            line_top: 0,
             line_bottom,
             info_line,
         }
