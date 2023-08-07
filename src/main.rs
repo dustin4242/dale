@@ -23,6 +23,15 @@ fn main() {
             temp_path
         )
     };
+    let file_name = file_path.split("/").last().unwrap();
+    let plugin = if !file_name.contains(".") {
+        let plugin_extension = file_name.split(".").last().unwrap();
+        let plugin_file =
+            fs::read_to_string(format!("{}.toml", plugin_extension)).unwrap_or("".to_owned());
+        toml::from_str(&plugin_file).expect(
+            format!("Plugin Toml File Unable To Be Parsed For .{plugin_extension} Files").as_str(),
+        )
+    };
     let mut file: Vec<String> = fs::read_to_string(file_path.to_owned())
         .expect(format!("File Supplied Doesnt Exist: {}", file_path).as_str())
         .replace("\t", "    ")

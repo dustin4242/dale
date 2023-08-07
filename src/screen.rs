@@ -1,4 +1,5 @@
 use console::Term;
+use regex::Regex;
 use std::{fs, io::Write, process::exit};
 
 pub struct Screen {
@@ -46,8 +47,11 @@ impl Screen {
     pub fn write_term(&mut self, term: &mut Term, file: &Vec<String>) {
         let size = term.size();
         term.clear_screen().unwrap();
+        let re = Regex::new(r"\buse\b").unwrap();
+        let print_file = format!("\n{}", file[self.line_top..self.line_bottom].join("\n"));
         term.write_all(
-            format!("\n{}", file[self.line_top..self.line_bottom].join("\n")).as_bytes(),
+            re.replace_all(&print_file, "\x1b[34muse\x1b[37m")
+                .as_bytes(),
         )
         .unwrap();
         let rest_of_screen = (size.1 as usize).checked_sub(self.info_line.len()).unwrap();
