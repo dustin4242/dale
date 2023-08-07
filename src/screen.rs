@@ -49,11 +49,8 @@ impl Screen {
         term.clear_screen().unwrap();
         let re = Regex::new(r"\buse\b").unwrap();
         let print_file = format!("\n{}", file[self.line_top..self.line_bottom].join("\n"));
-        term.write_all(
-            re.replace_all(&print_file, "\x1b[34muse\x1b[37m")
-                .as_bytes(),
-        )
-        .unwrap();
+        term.write_all(format!("\x1b[\x35 q{print_file}").as_bytes())
+            .unwrap();
         let rest_of_screen = (size.1 as usize).checked_sub(self.info_line.len()).unwrap();
         term.move_cursor_to(0, (size.0 - 1) as usize).unwrap();
         term.write_all(
