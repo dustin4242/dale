@@ -1,5 +1,4 @@
 use console::Term;
-use regex::Regex;
 use std::{fs, io::Write, process::exit};
 
 pub struct Screen {
@@ -20,10 +19,12 @@ impl Screen {
             info_line,
         }
     }
+
     pub fn add_char(&mut self, file: &mut Vec<String>, char: char) {
         file[self.line].insert(self.pos, char);
         self.pos += 1;
     }
+
     pub fn remove_char(&mut self, file: &mut Vec<String>) {
         if self.line != 0 && self.pos == 0 {
             let current_line = file[self.line].clone();
@@ -36,6 +37,7 @@ impl Screen {
             self.pos -= 1;
         }
     }
+
     pub fn newline(&mut self, file: &mut Vec<String>) {
         let current_line = file[self.line].clone();
         let new_lines = current_line.split_at(self.pos);
@@ -44,10 +46,10 @@ impl Screen {
         self.line += 1;
         self.pos = 0;
     }
+
     pub fn write_term(&mut self, term: &mut Term, file: &Vec<String>) {
         let size = term.size();
         term.clear_screen().unwrap();
-        let re = Regex::new(r"\buse\b").unwrap();
         let print_file = format!("\n{}", file[self.line_top..self.line_bottom].join("\n"));
         term.write_all(format!("\x1b[\x35 q{print_file}").as_bytes())
             .unwrap();
@@ -65,6 +67,7 @@ impl Screen {
         term.move_cursor_to(self.pos, self.line - self.line_top)
             .unwrap();
     }
+
     pub fn handle_key(&mut self, term: &mut Term, file: &mut Vec<String>, file_path: &String) {
         match term.read_key().unwrap() {
             console::Key::UnknownEscSeq(x) => match x[0].to_string().as_str() {
