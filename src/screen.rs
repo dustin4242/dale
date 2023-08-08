@@ -1,8 +1,7 @@
 use std::io::stdout;
-use std::time::Duration;
 use std::{fs, process::exit};
 
-use crossterm::event::{KeyCode, KeyModifiers};
+use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyEventState, KeyModifiers};
 use crossterm::{cursor, event, execute, style, terminal};
 use crossterm::{event::Event, terminal::ClearType::All};
 
@@ -77,29 +76,23 @@ impl Screen {
     pub fn handle_event(&mut self, file: &mut Vec<String>, file_path: &String) {
         terminal::enable_raw_mode().unwrap();
         match event::read().expect("Unable To Read Events") {
-            Event::Key(key) => {
-                self.handle_key(key.modifiers, key.code, file, file_path);
-            }
+            Event::Key(KeyEvent {
+                code: KeyCode::Char('s'),
+                modifiers: KeyModifiers::CONTROL,
+                kind: KeyEventKind::Press,
+                state: KeyEventState::NONE,
+            }) => match fs::write(file_path, file.join("\n")) {
+                Err(_) => self.info_line = "Unable To Save Contents".to_owned(),
+                Ok(_) => self.info_line = "Saved Contents".to_owned(),
+            },
+            Event::Key(key) => self.handle_key(key.code, file, file_path),
             x => todo!("unknown event: {x:?}"),
         }
         terminal::disable_raw_mode().unwrap();
     }
 
-    pub fn handle_key(
-        &mut self,
-        modifiers: KeyModifiers,
-        key: event::KeyCode,
-        file: &mut Vec<String>,
-        _file_path: &String,
-    ) {
+    pub fn handle_key(&mut self, key: event::KeyCode, file: &mut Vec<String>, _file_path: &String) {
         match key {
-            /*KeyCode::Modifier(x) => match x {
-                "s" => match fs::write(file_path, file.join("\n")) {
-                    Err(_) => self.info_line = "Unable To Save Contents".to_owned(),
-                    Ok(_) => self.info_line = "Saved Contents".to_owned(),
-                },
-                x => panic!("{x}"),
-            },*/
             KeyCode::Char(c) => self.add_char(file, c),
             KeyCode::Backspace => self.remove_char(file),
             KeyCode::Enter => self.newline(file),
