@@ -57,7 +57,7 @@ impl Screen {
         term.move_cursor_to(0, (size.0 - 1) as usize).unwrap();
         term.write_all(
             format!(
-                "\x1b[41m\x1b[30m\n{}{}\x1b[37m\x1b[40m",
+                "\x1b[46m\x1b[30m\n{}{}\x1b[37m\x1b[40m",
                 self.info_line,
                 " ".repeat(rest_of_screen)
             )

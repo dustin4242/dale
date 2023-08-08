@@ -24,7 +24,7 @@ fn main() {
         )
     };
     let file_name = file_path.split("/").last().unwrap();
-    let plugin = if !file_name.contains(".") {
+    let _plugin = if !file_name.contains(".") {
         let plugin_extension = file_name.split(".").last().unwrap();
         let plugin_file =
             fs::read_to_string(format!("{}.toml", plugin_extension)).unwrap_or("".to_owned());
