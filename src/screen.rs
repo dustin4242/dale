@@ -1,5 +1,10 @@
-use console::Term;
-use std::{fs, io::Write, process::exit};
+use std::io::stdout;
+use std::time::Duration;
+use std::{fs, process::exit};
+
+use crossterm::event::{KeyCode, KeyModifiers};
+use crossterm::{cursor, event, execute, style, terminal};
+use crossterm::{event::Event, terminal::ClearType::All};
 
 pub struct Screen {
     pub line: usize,
@@ -47,44 +52,62 @@ impl Screen {
         self.pos = 0;
     }
 
-    pub fn write_term(&mut self, term: &mut Term, file: &Vec<String>) {
-        let size = term.size();
-        term.clear_screen().unwrap();
+    pub fn write_term(&mut self, file: &Vec<String>) {
+        let mut stdout = stdout();
+        let size = terminal::size().unwrap();
         let print_file = format!("\n{}", file[self.line_top..self.line_bottom].join("\n"));
-        term.write_all(format!("\x1b[\x35 q{print_file}").as_bytes())
-            .unwrap();
-        let rest_of_screen = (size.1 as usize).checked_sub(self.info_line.len()).unwrap();
-        term.move_cursor_to(0, (size.0 - 1) as usize).unwrap();
-        term.write_all(
-            format!(
+        let rest_of_screen = (size.0 as usize)
+            .checked_sub(self.info_line.len())
+            .expect("Can't Get InfoLine To End Of Screen");
+        execute!(
+            stdout,
+            terminal::Clear(All),
+            style::Print(format!("\x1b[\x35 q{print_file}")),
+            cursor::MoveTo(0, size.1 - 1),
+            style::Print(format!(
                 "\x1b[44m\x1b[30m\n{}{}\x1b[37m\x1b[40m",
                 self.info_line,
                 " ".repeat(rest_of_screen)
-            )
-            .as_bytes(),
+            )),
+            cursor::MoveTo(self.pos as u16, (self.line - self.line_top) as u16)
         )
         .unwrap();
-        term.move_cursor_to(self.pos, self.line - self.line_top)
-            .unwrap();
     }
 
-    pub fn handle_key(&mut self, term: &mut Term, file: &mut Vec<String>, file_path: &String) {
-        match term.read_key().unwrap() {
-            console::Key::UnknownEscSeq(x) => match x[0].to_string().as_str() {
+    pub fn handle_event(&mut self, file: &mut Vec<String>, file_path: &String) {
+        terminal::enable_raw_mode().unwrap();
+        match event::read().expect("Unable To Read Events") {
+            Event::Key(key) => {
+                self.handle_key(key.modifiers, key.code, file, file_path);
+            }
+            x => todo!("unknown event: {x:?}"),
+        }
+        terminal::disable_raw_mode().unwrap();
+    }
+
+    pub fn handle_key(
+        &mut self,
+        modifiers: KeyModifiers,
+        key: event::KeyCode,
+        file: &mut Vec<String>,
+        _file_path: &String,
+    ) {
+        match key {
+            /*KeyCode::Modifier(x) => match x {
                 "s" => match fs::write(file_path, file.join("\n")) {
                     Err(_) => self.info_line = "Unable To Save Contents".to_owned(),
                     Ok(_) => self.info_line = "Saved Contents".to_owned(),
                 },
                 x => panic!("{x}"),
-            },
-            console::Key::Char(x) => self.add_char(file, x),
-            console::Key::Backspace => self.remove_char(file),
-            console::Key::Enter => self.newline(file),
-            console::Key::Tab => {
+            },*/
+            KeyCode::Char(c) => self.add_char(file, c),
+            KeyCode::Backspace => self.remove_char(file),
+            KeyCode::Enter => self.newline(file),
+            KeyCode::Tab => {
                 file[self.line].push_str("    ");
                 self.pos += 4;
             }
-            console::Key::ArrowUp => {
+            KeyCode::Up => {
                 if self.line != 0 {
                     self.line -= 1;
                     if file[self.line].len() < self.pos {
@@ -96,7 +119,7 @@ impl Screen {
                     }
                 }
             }
-            console::Key::ArrowDown => {
+            KeyCode::Down => {
                 if self.line + 1 < file.len() {
                     self.line += 1;
                     if file[self.line].len() < self.pos {
@@ -108,18 +131,18 @@ impl Screen {
                     }
                 }
             }
-            console::Key::ArrowRight => {
+            KeyCode::Right => {
                 if self.pos != file[self.line].len() {
                     self.pos += 1;
                 }
             }
-            console::Key::ArrowLeft => {
+            KeyCode::Left => {
                 if self.pos != 0 {
                     self.pos -= 1;
                 }
             }
-            console::Key::Escape => {
-                term.clear_screen().unwrap();
+            KeyCode::Esc => {
+                execute!(stdout(), terminal::Clear(All)).unwrap();
                 exit(0);
             }
             _ => (),

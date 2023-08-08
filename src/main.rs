@@ -1,4 +1,4 @@
-use console::Term;
+use crossterm::terminal;
 use std::{env, fs};
 
 mod screen;
@@ -40,21 +40,22 @@ fn main() {
         .collect();
     file.pop();
 
-    let mut term = Term::stdout();
+    let term_size = terminal::size().unwrap();
+
     let mut screen = Screen::new(
-        match file.len() < term.size().0 as usize - 1 {
+        match file.len() < term_size.1 as usize - 1 {
             true => file.len(),
-            false => term.size().0 as usize - 1,
+            false => term_size.1 as usize - 1,
         },
-        file_path.to_owned(),
+        file_path.split("/").last().unwrap().to_owned(),
     );
-    screen.write_term(&mut term, &file);
+    screen.write_term(&file);
     loop {
-        if term.size().0 as usize >= file.len() {
+        if term_size.1 as usize >= file.len() {
             screen.line_top = 0;
             screen.line_bottom = file.len();
         }
-        screen.write_term(&mut term, &file);
-        screen.handle_key(&mut term, &mut file, &file_path);
+        screen.handle_event(&mut file, &file_path);
+        screen.write_term(&file);
     }
 }
