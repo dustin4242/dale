@@ -30,15 +30,19 @@ impl Screen {
     }
 
     pub fn remove_char(&mut self, file: &mut Vec<String>) {
-        if self.line != 0 && self.pos == 0 {
-            let current_line = file[self.line].clone();
-            self.pos = file[self.line - 1].len();
-            file[self.line - 1].push_str(current_line.as_str());
-            file.remove(self.line);
-            self.line -= 1;
-        } else {
-            file[self.line].remove(self.pos - 1);
-            self.pos -= 1;
+        match (self.line != 0, self.pos != 0) {
+            (false, false) => (),
+            (true, false) => {
+                let current_line = file[self.line].clone();
+                self.pos = file[self.line - 1].len();
+                file[self.line - 1].push_str(current_line.as_str());
+                file.remove(self.line);
+                self.line -= 1;
+            }
+            (_, _) => {
+                file[self.line].remove(self.pos - 1);
+                self.pos -= 1;
+            }
         }
     }
 
