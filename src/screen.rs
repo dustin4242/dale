@@ -65,7 +65,11 @@ impl Screen {
         let print_file = if self.line_bottom <= file.len() {
             format!("\n{}", file[self.line_top..self.line_bottom].join("\n"))
         } else {
-            self.line_top -= self.line_bottom - file.len();
+            self.line_top -= if self.line_top >= self.line_bottom - file.len() {
+                self.line_bottom - file.len()
+            } else {
+                self.line_top
+            };
             self.line_bottom = file.len();
             format!("\n{}", file[self.line_top..self.line_bottom].join("\n"))
         };
