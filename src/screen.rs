@@ -38,6 +38,10 @@ impl Screen {
                 file[self.line - 1].push_str(current_line.as_str());
                 file.remove(self.line);
                 self.line -= 1;
+                if self.line_bottom > file.len() {
+                    self.line_bottom -= 1;
+                    self.line_top -= if self.line_top != 0 { 1 } else { 0 };
+                }
             }
             (_, _) => {
                 file[self.line].remove(self.pos - 1);
@@ -91,7 +95,7 @@ impl Screen {
                 modifiers: KeyModifiers::CONTROL,
                 kind: KeyEventKind::Press,
                 state: KeyEventState::NONE,
-            }) => match fs::write(file_path, file.join("\n")) {
+            }) => match fs::write(file_path, format!("{}\n", file.join("\n"))) {
                 Err(_) => self.info_line = "Unable To Save Contents".to_owned(),
                 Ok(_) => self.info_line = "Saved Contents".to_owned(),
             },
@@ -136,7 +140,7 @@ impl Screen {
                 }
             }
             KeyCode::Right => {
-                if self.pos != file[self.line].len() {
+                if self.pos < file[self.line].len() {
                     self.pos += 1;
                 }
             }
