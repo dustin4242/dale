@@ -38,7 +38,9 @@ fn main() {
         .split("\n")
         .map(|x| x.to_string())
         .collect();
-    file.pop();
+    if file.len() > 1 {
+        file.pop();
+    }
 
     let term_size = terminal::size().unwrap();
 
@@ -59,3 +61,4 @@ fn main() {
         screen.write_term(&file);
     }
 }
+

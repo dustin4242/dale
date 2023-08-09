@@ -25,7 +25,7 @@ impl Screen {
     }
 
     pub fn add_char(&mut self, file: &mut Vec<String>, char: char) {
-        file[self.line].insert(self.pos, char);
+        file.get_mut(self.line).unwrap().insert(self.pos, char);
         self.pos += 1;
     }
 
