@@ -54,7 +54,13 @@ impl Screen {
     pub fn write_term(&mut self, file: &Vec<String>) {
         let mut stdout = stdout();
         let size = terminal::size().unwrap();
-        let print_file = format!("\n{}", file[self.line_top..self.line_bottom].join("\n"));
+        let print_file = if self.line_bottom <= file.len() {
+            format!("\n{}", file[self.line_top..self.line_bottom].join("\n"))
+        } else {
+            self.line_top -= self.line_bottom - file.len();
+            self.line_bottom = file.len();
+            format!("\n{}", file[self.line_top..self.line_bottom].join("\n"))
+        };
         let rest_of_screen = (size.0 as usize)
             .checked_sub(self.info_line.len())
             .expect("Can't Get InfoLine To End Of Screen");
@@ -86,6 +92,7 @@ impl Screen {
                 Ok(_) => self.info_line = "Saved Contents".to_owned(),
             },
             Event::Key(key) => self.handle_key(key.code, file, file_path),
+            Event::Resize(_, y) => self.line_bottom = self.line_top + y as usize - 1,
             x => todo!("unknown event: {x:?}"),
         }
         terminal::disable_raw_mode().unwrap();
