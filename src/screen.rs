@@ -75,6 +75,7 @@ impl Screen {
         execute!(
             stdout,
             terminal::Clear(All),
+            cursor::MoveTo(0, 0),
             style::Print(format!("\x1b[\x35 q{print_file}")),
             cursor::MoveTo(0, size.1 - 1),
             style::Print(format!(
@@ -116,7 +117,7 @@ impl Screen {
                 self.pos += 4;
             }
             KeyCode::Up => {
-                if self.line != 0 {
+                if self.line > 0 {
                     self.line -= 1;
                     if file[self.line].len() < self.pos {
                         self.pos = file[self.line].len();
