@@ -61,4 +61,3 @@ fn main() {
         screen.write_term(&file);
     }
 }
-

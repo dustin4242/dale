@@ -57,6 +57,10 @@ impl Screen {
         file.insert(self.line + 1, new_lines.1.to_string());
         self.line += 1;
         self.pos = 0;
+        if self.line == self.line_bottom {
+            self.line_top += 1;
+            self.line_bottom += 1;
+        }
     }
 
     pub fn write_term(&mut self, file: &Vec<String>) {
