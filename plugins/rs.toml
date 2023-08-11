@@ -1,0 +1,3 @@
+[basic]
+keywords = ["use", "let", "mut"]
+strings = true

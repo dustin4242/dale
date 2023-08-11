@@ -63,7 +63,7 @@ impl Screen {
         }
     }
 
-    pub fn write_term(&mut self, file: &Vec<String>) {
+    pub fn write_term(&mut self, file: &Vec<String>, plugin: Option<toml::Value>) {
         let mut stdout = stdout();
         let size = terminal::size().unwrap();
         let print_file = if self.line_bottom < file.len() {
@@ -164,7 +164,7 @@ impl Screen {
                 }
             }
             KeyCode::Esc => {
-                execute!(stdout(), terminal::Clear(All)).unwrap();
+                execute!(stdout(), terminal::Clear(All), cursor::MoveTo(0, 0)).unwrap();
                 exit(0);
             }
             _ => (),

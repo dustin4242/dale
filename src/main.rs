@@ -24,13 +24,20 @@ fn main() {
         )
     };
     let file_name = file_path.split("/").last().unwrap();
-    let _plugin = if !file_name.contains(".") {
+    let plugin: Option<toml::Value> = if file_name.contains(".") {
         let plugin_extension = file_name.split(".").last().unwrap();
-        let plugin_file =
-            fs::read_to_string(format!("{}.toml", plugin_extension)).unwrap_or("".to_owned());
-        toml::from_str(&plugin_file).expect(
-            format!("Plugin Toml File Unable To Be Parsed For .{plugin_extension} Files").as_str(),
-        )
+        let plugin_file = fs::read_to_string(format!("./plugins/{}.toml", plugin_extension)).ok();
+        match plugin_file {
+            Some(x) => Some(
+                toml::from_str(&x).expect(
+                    format!("Plugin Toml File Unable To Be Parsed For .{plugin_extension} Files")
+                        .as_str(),
+                ),
+            ),
+            None => None,
+        }
+    } else {
+        None
     };
     let mut file: Vec<String> = fs::read_to_string(file_path.to_owned())
         .expect(format!("File Supplied Doesnt Exist: {}", file_path).as_str())
@@ -51,13 +58,13 @@ fn main() {
         },
         file_path.split("/").last().unwrap().to_owned(),
     );
-    screen.write_term(&file);
+    screen.write_term(&file, plugin.to_owned());
     loop {
         if term_size.1 as usize > file.len() {
             screen.line_top = 0;
             screen.line_bottom = file.len();
         }
         screen.handle_event(&mut file, &file_path);
-        screen.write_term(&file);
+        screen.write_term(&file, plugin.to_owned());
     }
 }
