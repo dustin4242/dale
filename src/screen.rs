@@ -62,7 +62,7 @@ impl Screen {
     pub fn write_term(&mut self, file: &Vec<String>) {
         let mut stdout = stdout();
         let size = terminal::size().unwrap();
-        let print_file = if self.line_bottom <= file.len() {
+        let print_file = if self.line_bottom < file.len() {
             format!("\n{}", file[self.line_top..self.line_bottom].join("\n"))
         } else {
             self.line_top -= if self.line_top >= self.line_bottom - file.len() {

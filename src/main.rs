@@ -53,7 +53,7 @@ fn main() {
     );
     screen.write_term(&file);
     loop {
-        if term_size.1 as usize >= file.len() {
+        if term_size.1 as usize > file.len() {
             screen.line_top = 0;
             screen.line_bottom = file.len();
         }
