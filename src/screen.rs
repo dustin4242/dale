@@ -1,9 +1,11 @@
+use std::collections::HashMap;
 use std::io::stdout;
 use std::{fs, process::exit};
 
 use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyEventState, KeyModifiers};
 use crossterm::{cursor, event, execute, style, terminal};
 use crossterm::{event::Event, terminal::ClearType::All};
+use regex::Regex;
 
 pub struct Screen {
     pub line: usize,
@@ -66,7 +68,8 @@ impl Screen {
     pub fn write_term(&mut self, file: &Vec<String>, plugin: Option<toml::Value>) {
         let mut stdout = stdout();
         let size = terminal::size().unwrap();
-        let print_file = if self.line_bottom < file.len() {
+        let syntax = get_syntax(plugin.unwrap());
+        let mut print_file = if self.line_bottom < file.len() {
             format!("\n{}", file[self.line_top..self.line_bottom].join("\n"))
         } else {
             self.line_top -= if self.line_top >= self.line_bottom - file.len() {
@@ -77,6 +80,12 @@ impl Screen {
             self.line_bottom = file.len();
             format!("\n{}", file[self.line_top..self.line_bottom].join("\n"))
         };
+        for replace in syntax {
+            print_file = Regex::new(replace.0.as_str())
+                .unwrap()
+                .replace_all(&print_file, replace.1)
+                .to_string()
+        }
         let rest_of_screen = (size.0 as usize)
             .checked_sub(self.info_line.len())
             .expect("Can't Get InfoLine To End Of Screen");
@@ -170,4 +179,22 @@ impl Screen {
             _ => (),
         }
     }
+}
+fn get_syntax(plugin: toml::Value) -> HashMap<String, String> {
+    let mut syntax = HashMap::new();
+    let keywords = plugin
+        .get("basic")
+        .unwrap()
+        .get("keywords")
+        .unwrap()
+        .as_array()
+        .unwrap();
+    for key in keywords {
+        let replace = key.as_str().unwrap();
+        syntax.insert(
+            format!(r"\b{replace}\b"),
+            format!("\x1b[34m{replace}\x1b[37m"),
+        );
+    }
+    syntax
 }
