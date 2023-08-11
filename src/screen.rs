@@ -109,7 +109,12 @@ impl Screen {
                 Ok(_) => self.info_line = "Saved Contents".to_owned(),
             },
             Event::Key(key) => self.handle_key(key.code, file, file_path),
-            Event::Resize(_, y) => self.line_bottom = self.line_top + y as usize - 1,
+            Event::Resize(_, y) => {
+                self.line_bottom = self.line_top + y as usize - 1;
+                if self.line >= self.line_bottom {
+                    self.line = self.line_bottom - 1;
+                }
+            }
             x => todo!("unknown event: {x:?}"),
         }
         terminal::disable_raw_mode().unwrap();
