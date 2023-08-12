@@ -26,12 +26,12 @@ impl Screen {
         }
     }
 
-    pub fn add_char(&mut self, file: &mut Vec<String>, char: char) {
+    fn add_char(&mut self, file: &mut Vec<String>, char: char) {
         file.get_mut(self.line).unwrap().insert(self.pos, char);
         self.pos += 1;
     }
 
-    pub fn remove_char(&mut self, file: &mut Vec<String>) {
+    fn remove_char(&mut self, file: &mut Vec<String>) {
         match (self.line != 0, self.pos != 0) {
             (false, false) => (),
             (true, false) => {
@@ -52,7 +52,7 @@ impl Screen {
         }
     }
 
-    pub fn newline(&mut self, file: &mut Vec<String>) {
+    fn newline(&mut self, file: &mut Vec<String>) {
         let current_line = file[self.line].clone();
         let new_lines = current_line.split_at(self.pos);
         file[self.line] = new_lines.0.to_string();
@@ -68,7 +68,6 @@ impl Screen {
     pub fn write_term(&mut self, file: &Vec<String>, plugin: Option<toml::Value>) {
         let mut stdout = stdout();
         let size = terminal::size().unwrap();
-        let syntax = get_syntax(plugin.unwrap());
         let mut print_file = if self.line_bottom < file.len() {
             format!("\n{}", file[self.line_top..self.line_bottom].join("\n"))
         } else {
@@ -80,12 +79,7 @@ impl Screen {
             self.line_bottom = file.len();
             format!("\n{}", file[self.line_top..self.line_bottom].join("\n"))
         };
-        for replace in syntax {
-            print_file = Regex::new(replace.0.as_str())
-                .unwrap()
-                .replace_all(&print_file, replace.1)
-                .to_string()
-        }
+        print_file = syntax_highlight(plugin, print_file);
         let rest_of_screen = (size.0 as usize)
             .checked_sub(self.info_line.len())
             .expect("Can't Get InfoLine To End Of Screen");
@@ -180,21 +174,40 @@ impl Screen {
         }
     }
 }
-fn get_syntax(plugin: toml::Value) -> HashMap<String, String> {
-    let mut syntax = HashMap::new();
-    let keywords = plugin
-        .get("basic")
-        .unwrap()
-        .get("keywords")
-        .unwrap()
-        .as_array()
-        .unwrap();
+fn syntax_highlight(plugin: Option<toml::Value>, mut file: String) -> String {
+    let syntax = plugin.unwrap();
+    let mut replace_syntax = HashMap::new();
+    let basic_table = syntax.get("basic").unwrap();
+    let keywords = basic_table.get("keywords").unwrap().as_array().unwrap();
     for key in keywords {
         let replace = key.as_str().unwrap();
-        syntax.insert(
+        replace_syntax.insert(
             format!(r"\b{replace}\b"),
             format!("\x1b[34m{replace}\x1b[37m"),
         );
     }
-    syntax
+    for replace in replace_syntax {
+        file = Regex::new(replace.0.as_str())
+            .unwrap()
+            .replace_all(&file, replace.1)
+            .to_string()
+    }
+    let strings = basic_table.get("strings").unwrap().as_bool().unwrap();
+    if strings {
+        let quote_regex = Regex::new("\"+[^\"]*\"*").unwrap();
+        let temp_file = file.clone();
+        let mut quotes = quote_regex.find_iter(&temp_file);
+        let mut i = 0;
+        loop {
+            match quotes.next() {
+                Some(find) => {
+                    file.insert_str(find.start() + 10 * i, "\x1b[35m");
+                    file.insert_str(find.end() + 5 * ((2 * i) + 1), "\x1b[37m");
+                }
+                None => break,
+            }
+            i += 1
+        }
+    }
+    file
 }
