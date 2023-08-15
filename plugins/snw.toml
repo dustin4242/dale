@@ -1,3 +1,5 @@
 [basic]
 keywords = ["use", "rust", "let", "const"]
 strings = true
+functions = true
+numbers = true
