@@ -1,5 +1,5 @@
 [basic]
-keywords = ["use", "let", "mut", "fn", "loop", "mod", "if", "else", "match"]
+keywords = ["use", "let", "fn", "for", "in", "pub", "loop", "mod", "if", "else", "match"]
 types = ["str", "String", "u32", "f32", "u8", "u16", "f8", "f16", "Vec"]
 strings = true
 functions = true
@@ -8,3 +8,5 @@ numbers = true
 [custom]
 "[\\w\\d]+!+" = "blue"
 "[\\w\\d]+::" = "blue"
+"\\b(mut)+\\b" = "blue"
+"\\B&+(mut\\b)*" = "blue"
