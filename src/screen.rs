@@ -183,7 +183,7 @@ fn syntax_highlight(plugin: Option<toml::Value>, mut file: String) -> String {
         let replace = key.as_str().unwrap();
         replace_syntax.insert(
             format!(r"\b{replace}\b"),
-            format!("\x1b[34m{replace}\x1b[37m"),
+            format!("\x1b[32m{replace}\x1b[37m"),
         );
     }
     for replace in replace_syntax {
@@ -220,6 +220,33 @@ fn syntax_highlight(plugin: Option<toml::Value>, mut file: String) -> String {
                 Some(find) => {
                     file.insert_str(find.start() + 10 * i, "\x1b[36m");
                     file.insert_str(find.end() - 1 + 5 * ((2 * i) + 1), "\x1b[37m");
+                    i += 1
+                }
+                None => break,
+            }
+        }
+    }
+    let custom_table = syntax.get("custom").unwrap().as_table().unwrap();
+    for syntax in custom_table {
+        let custom_regex = Regex::new(syntax.0).unwrap();
+        let mut color = syntax.1.as_str().unwrap();
+        match color {
+            "red" => color = "\x1b[31m",
+            "green" => color = "\x1b[32m",
+            "yellow" => color = "\x1b[33m",
+            "blue" => color = "\x1b[34m",
+            "magenta" => color = "\x1b[35m",
+            "cyan" => color = "\x1b[36m",
+            x => panic!("Unknown Color In Syntax: {}", x),
+        }
+        let temp_file = file.clone();
+        let mut functions = custom_regex.find_iter(&temp_file);
+        let mut i = 0;
+        loop {
+            match functions.next() {
+                Some(find) => {
+                    file.insert_str(find.start() + 10 * i, color);
+                    file.insert_str(find.end() + 5 * ((2 * i) + 1), "\x1b[37m");
                     i += 1
                 }
                 None => break,
