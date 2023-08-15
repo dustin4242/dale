@@ -192,8 +192,40 @@ fn syntax_highlight(plugin: Option<toml::Value>, mut file: String) -> String {
             .replace_all(&file, replace.1)
             .to_string()
     }
-    let strings = basic_table.get("strings").unwrap().as_bool().unwrap();
-    if strings {
+    replace_syntax = HashMap::new();
+    let keywords = basic_table.get("types").unwrap().as_array().unwrap();
+    for key in keywords {
+        let replace = key.as_str().unwrap();
+        replace_syntax.insert(
+            format!(r"\b{replace}\b"),
+            format!("\x1b[33m{replace}\x1b[37m"),
+        );
+    }
+    for replace in replace_syntax {
+        file = Regex::new(replace.0.as_str())
+            .unwrap()
+            .replace_all(&file, replace.1)
+            .to_string()
+    }
+    let numbers_op = basic_table.get("numbers").unwrap().as_bool().unwrap();
+    if numbers_op {
+        let paren_regex = Regex::new(r"\b(\d+)\b").unwrap();
+        let temp_file = file.clone();
+        let mut numbers = paren_regex.find_iter(&temp_file);
+        let mut i = 0;
+        loop {
+            match numbers.next() {
+                Some(find) => {
+                    file.insert_str(find.start() + 10 * i, "\x1b[35m");
+                    file.insert_str(find.end() + 5 * ((2 * i) + 1), "\x1b[37m");
+                    i += 1
+                }
+                None => break,
+            }
+        }
+    }
+    let strings_op = basic_table.get("strings").unwrap().as_bool().unwrap();
+    if strings_op {
         let quote_regex = Regex::new("\"+[^\"]*\"*").unwrap();
         let temp_file = file.clone();
         let mut quotes = quote_regex.find_iter(&temp_file);
