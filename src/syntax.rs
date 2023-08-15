@@ -3,59 +3,63 @@ use std::collections::HashMap;
 use toml::{map::Map, Value};
 
 pub fn highlight(plugin: Option<toml::Value>, mut file: String) -> String {
-    let empty_table = Value::Table(Map::new());
-    let empty_array = Value::Array(Vec::new());
-    let syntax = plugin.unwrap();
-    let mut replace_syntax = HashMap::new();
-    let basic_table = syntax.get("basic").unwrap_or(&empty_table);
-    let keywords = basic_table
-        .get("keywords")
-        .unwrap_or(&empty_array)
-        .as_array()
-        .unwrap();
-    let types = basic_table
-        .get("types")
-        .unwrap_or(&empty_array)
-        .as_array()
-        .unwrap();
-    for key in keywords {
-        let replace = key.as_str().unwrap();
-        replace_syntax.insert(
-            format!(r"\b{replace}\b"),
-            format!("\x1b[32m{replace}\x1b[37m"),
-        );
+    match plugin {
+        Some(syntax) => {
+            let empty_table = Value::Table(Map::new());
+            let empty_array = Value::Array(Vec::new());
+            let mut replace_syntax = HashMap::new();
+            let basic_table = syntax.get("basic").unwrap_or(&empty_table);
+            let keywords = basic_table
+                .get("keywords")
+                .unwrap_or(&empty_array)
+                .as_array()
+                .unwrap();
+            let types = basic_table
+                .get("types")
+                .unwrap_or(&empty_array)
+                .as_array()
+                .unwrap();
+            for key in keywords {
+                let replace = key.as_str().unwrap();
+                replace_syntax.insert(
+                    format!(r"\b{replace}\b"),
+                    format!("\x1b[32m{replace}\x1b[37m"),
+                );
+            }
+            for key_type in types {
+                let replace = key_type.as_str().unwrap();
+                replace_syntax.insert(
+                    format!(r"\b{replace}\b"),
+                    format!("\x1b[33m{replace}\x1b[37m"),
+                );
+            }
+            for replace in replace_syntax {
+                file = Regex::new(replace.0.as_str())
+                    .unwrap()
+                    .replace_all(&file, replace.1)
+                    .to_string()
+            }
+            basic_op(basic_table, &mut file, "numbers", r"\b\d+\b", "magenta", 0);
+            basic_op(
+                basic_table,
+                &mut file,
+                "strings",
+                "\"+[^\"]*\"*",
+                "magenta",
+                0,
+            );
+            basic_op(
+                basic_table,
+                &mut file,
+                "functions",
+                r"[\w\d]+\(+",
+                "cyan",
+                -1,
+            );
+            custom_op(&syntax, &mut file);
+        }
+        None => (),
     }
-    for key_type in types {
-        let replace = key_type.as_str().unwrap();
-        replace_syntax.insert(
-            format!(r"\b{replace}\b"),
-            format!("\x1b[33m{replace}\x1b[37m"),
-        );
-    }
-    for replace in replace_syntax {
-        file = Regex::new(replace.0.as_str())
-            .unwrap()
-            .replace_all(&file, replace.1)
-            .to_string()
-    }
-    basic_op(basic_table, &mut file, "numbers", r"\b\d+\b", "magenta", 0);
-    basic_op(
-        basic_table,
-        &mut file,
-        "strings",
-        "\"+[^\"]*\"*",
-        "magenta",
-        0,
-    );
-    basic_op(
-        basic_table,
-        &mut file,
-        "functions",
-        r"[\w\d]+\(+",
-        "cyan",
-        -1,
-    );
-    custom_op(&syntax, &mut file);
     file
 }
 
