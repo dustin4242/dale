@@ -2,6 +2,7 @@ use crossterm::terminal;
 use std::{env, fs};
 
 mod screen;
+mod syntax;
 use screen::Screen;
 
 fn main() {
