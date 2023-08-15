@@ -203,10 +203,27 @@ fn syntax_highlight(plugin: Option<toml::Value>, mut file: String) -> String {
                 Some(find) => {
                     file.insert_str(find.start() + 10 * i, "\x1b[35m");
                     file.insert_str(find.end() + 5 * ((2 * i) + 1), "\x1b[37m");
+                    i += 1
                 }
                 None => break,
             }
-            i += 1
+        }
+    }
+    let functions_op = basic_table.get("functions").unwrap().as_bool().unwrap();
+    if functions_op {
+        let paren_regex = Regex::new(r"[\w\d]+\(+").unwrap();
+        let temp_file = file.clone();
+        let mut functions = paren_regex.find_iter(&temp_file);
+        let mut i = 0;
+        loop {
+            match functions.next() {
+                Some(find) => {
+                    file.insert_str(find.start() + 10 * i, "\x1b[36m");
+                    file.insert_str(find.end() - 1 + 5 * ((2 * i) + 1), "\x1b[37m");
+                    i += 1
+                }
+                None => break,
+            }
         }
     }
     file

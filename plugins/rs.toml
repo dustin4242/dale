@@ -1,3 +1,7 @@
 [basic]
 keywords = ["use", "let", "mut", "fn", "loop", "mod", "if", "else", "match"]
 strings = true
+functions = true
+
+[custom]
+"[\\w\\d]+!+" = "blue"
