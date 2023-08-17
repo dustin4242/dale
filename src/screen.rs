@@ -1,4 +1,5 @@
 use std::io::stdout;
+use std::process::Command;
 use std::{fs, process::exit};
 
 use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyEventState, KeyModifiers};
@@ -109,6 +110,12 @@ impl Screen {
                 Err(_) => self.info_line = "Unable To Save Contents".to_owned(),
                 Ok(_) => self.info_line = "Saved Contents".to_owned(),
             },
+            Event::Key(KeyEvent {
+                code: KeyCode::Char('r'),
+                modifiers: KeyModifiers::CONTROL,
+                kind: KeyEventKind::Press,
+                state: KeyEventState::NONE,
+            }) => self.command_handler(),
             Event::Key(key) => self.handle_key(key.code, file, file_path),
             Event::Resize(_, y) => {
                 self.line_bottom = self.line_top + y as usize - 1;
@@ -169,6 +176,88 @@ impl Screen {
                 exit(0);
             }
             _ => (),
+        }
+    }
+    pub fn command_handler(&mut self) {
+        let mut std = stdout();
+        let mut command = "".to_string();
+        let size = terminal::size().unwrap();
+        let mut rest_of_screen = (size.0 as usize)
+            .checked_sub(format!("Command: ").len())
+            .expect("Can't Get InfoLine To End Of Screen");
+        execute!(
+            std,
+            cursor::MoveTo(0, size.1),
+            terminal::Clear(terminal::ClearType::CurrentLine),
+            style::Print(format!(
+                "\x1b[44m\x1b[30mCommand: {}\x1b[37m\x1b[40m",
+                " ".repeat(rest_of_screen)
+            )),
+        )
+        .unwrap();
+        loop {
+            match event::read().expect("Unable To Read Events") {
+                Event::Key(key) => match key.code {
+                    KeyCode::Char(c) => {
+                        rest_of_screen -= 1;
+                        command.push(c);
+                        execute!(
+                            std,
+                            cursor::MoveTo(0, size.1),
+                            terminal::Clear(terminal::ClearType::CurrentLine),
+                            style::Print(format!(
+                                "\x1b[44m\x1b[30mCommand: {}{}\x1b[37m\x1b[40m",
+                                command,
+                                " ".repeat(rest_of_screen)
+                            )),
+                        )
+                        .unwrap();
+                    }
+                    KeyCode::Backspace => {
+                        if command.pop() != None {
+                            rest_of_screen += 1;
+                        }
+                        execute!(
+                            stdout(),
+                            cursor::MoveTo(0, size.1),
+                            terminal::Clear(terminal::ClearType::CurrentLine),
+                            style::Print(format!(
+                                "\x1b[44m\x1b[30mCommand: {}{}\x1b[37m\x1b[40m",
+                                command,
+                                " ".repeat(rest_of_screen)
+                            )),
+                        )
+                        .unwrap();
+                    }
+                    KeyCode::Esc => return,
+                    KeyCode::Enter => break,
+                    _ => (),
+                },
+                _ => (),
+            }
+        }
+        if command != "".to_owned() {
+            execute!(std, terminal::Clear(All), cursor::MoveTo(0, 0)).unwrap();
+            let mut command_args: Vec<&str> = command.split(" ").collect();
+            match Command::new(command_args.remove(0))
+                .args(command_args)
+                .spawn()
+            {
+                Ok(mut x) => {
+                    x.wait().unwrap();
+                    println!("Press ESC to return to editor.");
+                    loop {
+                        match event::read().expect("Unable To Read Events") {
+                            Event::Key(key) => match key.code {
+                                KeyCode::Esc => break,
+                                _ => (),
+                            },
+                            _ => (),
+                        }
+                    }
+                }
+                Err(x) => self.info_line = x.to_string(),
+            }
         }
     }
 }
