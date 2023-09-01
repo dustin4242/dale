@@ -183,7 +183,7 @@ impl Screen {
         let mut command = "".to_string();
         let size = terminal::size().unwrap();
         let mut rest_of_screen = (size.0 as usize)
-            .checked_sub(format!("Command: ").len())
+            .checked_sub(9)
             .expect("Can't Get InfoLine To End Of Screen");
         execute!(
             std,
@@ -193,6 +193,7 @@ impl Screen {
                 "\x1b[44m\x1b[30mCommand: {}\x1b[37m\x1b[40m",
                 " ".repeat(rest_of_screen)
             )),
+            cursor::MoveTo(9, size.1)
         )
         .unwrap();
         loop {
@@ -210,6 +211,7 @@ impl Screen {
                                 command,
                                 " ".repeat(rest_of_screen)
                             )),
+                            cursor::MoveTo(9 + command.len() as u16, size.1)
                         )
                         .unwrap();
                     }
@@ -226,6 +228,7 @@ impl Screen {
                                 command,
                                 " ".repeat(rest_of_screen)
                             )),
+                            cursor::MoveTo(9 + command.len() as u16, size.1)
                         )
                         .unwrap();
                     }
