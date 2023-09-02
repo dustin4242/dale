@@ -3,7 +3,7 @@ name = "dale"
 version = "0.1.0"
 edition = "2021"
 description = "Dustin's Awesome Line Editor"
-license = "GPL-3.0-or-later"
+license = "GPL-3.0-only"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
