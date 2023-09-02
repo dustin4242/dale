@@ -179,14 +179,14 @@ impl Screen {
         }
     }
     pub fn command_handler(&mut self) {
-        let mut std = stdout();
+        let mut stdout = stdout();
         let mut command = "".to_string();
-        let size = terminal::size().unwrap();
+        let mut size = terminal::size().unwrap();
         let mut rest_of_screen = (size.0 as usize)
             .checked_sub(9)
             .expect("Can't Get InfoLine To End Of Screen");
         execute!(
-            std,
+            stdout,
             cursor::MoveTo(0, size.1),
             terminal::Clear(terminal::ClearType::CurrentLine),
             style::Print(format!(
@@ -197,13 +197,14 @@ impl Screen {
         )
         .unwrap();
         loop {
+            size = terminal::size().unwrap();
             match event::read().expect("Unable To Read Events") {
                 Event::Key(key) => match key.code {
                     KeyCode::Char(c) => {
                         rest_of_screen -= 1;
                         command.push(c);
                         execute!(
-                            std,
+                            stdout,
                             cursor::MoveTo(0, size.1),
                             terminal::Clear(terminal::ClearType::CurrentLine),
                             style::Print(format!(
@@ -220,7 +221,7 @@ impl Screen {
                             rest_of_screen += 1;
                         }
                         execute!(
-                            stdout(),
+                            stdout,
                             cursor::MoveTo(0, size.1),
                             terminal::Clear(terminal::ClearType::CurrentLine),
                             style::Print(format!(
@@ -240,8 +241,9 @@ impl Screen {
             }
         }
         if command != "".to_owned() {
-            execute!(std, terminal::Clear(All), cursor::MoveTo(0, 0)).unwrap();
+            execute!(stdout, terminal::Clear(All), cursor::MoveTo(0, 0)).unwrap();
             let mut command_args: Vec<&str> = command.split(" ").collect();
+            terminal::disable_raw_mode().unwrap();
             match Command::new(command_args.remove(0))
                 .args(command_args)
                 .spawn()
@@ -250,6 +252,7 @@ impl Screen {
                     x.wait().unwrap();
                     println!("Press ESC to return to editor.");
                     loop {
+                        terminal::enable_raw_mode().unwrap();
                         match event::read().expect("Unable To Read Events") {
                             Event::Key(key) => match key.code {
                                 KeyCode::Esc => break,
