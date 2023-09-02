@@ -129,15 +129,16 @@ impl Screen {
     }
 
     pub fn handle_key(&mut self, key: event::KeyCode, file: &mut Vec<String>, _file_path: &String) {
+        use KeyCode as KC;
         match key {
-            KeyCode::Char(c) => self.add_char(file, c),
-            KeyCode::Backspace => self.remove_char(file),
-            KeyCode::Enter => self.newline(file),
-            KeyCode::Tab => {
+            KC::Char(c) => self.add_char(file, c),
+            KC::Backspace => self.remove_char(file),
+            KC::Enter => self.newline(file),
+            KC::Tab => {
                 file[self.line].push_str("    ");
                 self.pos += 4;
             }
-            KeyCode::Up => {
+            KC::Up => {
                 if self.line > 0 {
                     self.line -= 1;
                     if file[self.line].len() < self.pos {
@@ -149,7 +150,7 @@ impl Screen {
                     }
                 }
             }
-            KeyCode::Down => {
+            KC::Down => {
                 if self.line + 1 < file.len() {
                     self.line += 1;
                     if file[self.line].len() < self.pos {
@@ -161,18 +162,19 @@ impl Screen {
                     }
                 }
             }
-            KeyCode::Right => {
+            KC::Right => {
                 if self.pos < file[self.line].len() {
                     self.pos += 1;
                 }
             }
-            KeyCode::Left => {
+            KC::Left => {
                 if self.pos != 0 {
                     self.pos -= 1;
                 }
             }
-            KeyCode::Esc => {
+            KC::Esc => {
                 execute!(stdout(), terminal::Clear(All), cursor::MoveTo(0, 0)).unwrap();
+                terminal::disable_raw_mode().unwrap();
                 exit(0);
             }
             _ => (),
@@ -250,7 +252,7 @@ impl Screen {
             {
                 Ok(mut x) => {
                     x.wait().unwrap();
-                    println!("Press ESC to return to editor.");
+                    execute!(stdout, style::Print("Press ESC to return to editor.")).unwrap();
                     loop {
                         terminal::enable_raw_mode().unwrap();
                         match event::read().expect("Unable To Read Events") {
