@@ -2,10 +2,12 @@
 name = "dale"
 version = "0.1.0"
 edition = "2021"
+description = "Dustin's Awesome Line Editor"
+license = "GPL-3.0-or-later"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-crossterm = "*"
-regex = "*"
-toml = "*"
+crossterm = "0.27.0"
+regex = "1.9.5"
+toml = "0.7.5"
