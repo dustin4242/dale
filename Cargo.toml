@@ -4,8 +4,9 @@ version = "0.1.2"
 edition = "2021"
 description = "Dustin's Awesome Line Editor"
 license = "GPL-3.0-only"
+license-file = "LISCENSE"
 readme = "./readme.md"
-include = ["plugins"]
+include = ["/src", "/plugins", "/build.rs"]
 
 [profile.release]
 opt-level = "z"
