@@ -3,7 +3,7 @@ name = "dale"
 version = "0.1.6"
 edition = "2021"
 description = "Dustin's Awesome Line Editor"
-license = "gpl-3.0-only"
+license = "GPL-3.0-only"
 readme = "./readme.md"
 include = ["/src", "/plugins", "/build.rs"]
 
