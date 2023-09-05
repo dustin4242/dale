@@ -4,7 +4,7 @@ version = "0.1.2"
 edition = "2021"
 description = "Dustin's Awesome Line Editor"
 license = "GPL-3.0-only"
-license-file = "LISCENSE"
+license-file = "LICENSE"
 readme = "./readme.md"
 include = ["/src", "/plugins", "/build.rs"]
 
