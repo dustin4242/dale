@@ -25,15 +25,15 @@ fn main() {
         )
     };
     let file_name = file_path.split("/").last().unwrap();
+    let plugins_dir = format!("{}/.config/dale/plugins", env::var("HOME").unwrap());
     let plugin: Option<toml::Value> = if file_name.contains(".") {
         let plugin_extension = file_name.split(".").last().unwrap();
-        let plugin_file = fs::read_to_string(format!("./plugins/{}.toml", plugin_extension)).ok();
+        let plugin_file =
+            fs::read_to_string(format!("{}/{}.toml", plugins_dir, plugin_extension).as_str()).ok();
         match plugin_file {
-            Some(x) => Some(
-                toml::from_str(&x).expect(
-                    format!("Plugin Toml File Unable To Be Parsed For .{plugin_extension} Files")
-                        .as_str(),
-                ),
+            Some(x) => toml::from_str(&x).expect(
+                format!("Plugin Toml File Unable To Be Parsed For .{plugin_extension} Files")
+                    .as_str(),
             ),
             None => None,
         }
