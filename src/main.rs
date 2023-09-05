@@ -6,24 +6,35 @@ mod syntax;
 use screen::Screen;
 
 fn main() {
-    let temp_path = env::args().nth(1).expect("Didn't Supply A File To Edit");
-    let isrootdir = temp_path.starts_with("/");
-    let ishomedir = temp_path.starts_with("~");
-    let file_path = if isrootdir {
-        temp_path
-    } else if ishomedir {
-        format!(
-            "{}/{}",
-            env::var("HOME").expect("You Do Not Have A HOME Path Set In Env"),
-            temp_path.get(1..).unwrap(),
-        )
-    } else {
-        format!(
-            "{}/{}",
-            env::current_dir().unwrap().to_str().unwrap(),
-            temp_path
-        )
-    };
+    let temp_path = env::args().nth(1);
+    let isrootdir: bool;
+    let ishomedir: bool;
+    let file_path: String;
+    match temp_path {
+        None => {
+            println!("Usage: dale [FILE_PATH]");
+            return;
+        }
+        Some(temp_path) => {
+            isrootdir = temp_path.starts_with("/");
+            ishomedir = temp_path.starts_with("~");
+            file_path = if isrootdir {
+                temp_path
+            } else if ishomedir {
+                format!(
+                    "{}/{}",
+                    env::var("HOME").expect("You Do Not Have A HOME Path Set In Env"),
+                    temp_path.get(1..).unwrap(),
+                )
+            } else {
+                format!(
+                    "{}/{}",
+                    env::current_dir().unwrap().to_str().unwrap(),
+                    temp_path
+                )
+            };
+        }
+    }
     let file_name = file_path.split("/").last().unwrap();
     let plugins_dir = format!("{}/.config/dale/plugins", env::var("HOME").unwrap());
     let plugin: Option<toml::Value> = if file_name.contains(".") {
