@@ -6,7 +6,6 @@ fn main() {
     match (home, cwd) {
         (Ok(home), Ok(cwd)) => {
             create_dir(format!("{home}/.config/dale")).unwrap_or_default();
-            println!("cargo:rerun-if-changed={home}/.config/dale/plugins");
             Command::new("cp")
                 .args([
                     "-r",
