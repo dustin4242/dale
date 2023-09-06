@@ -44,7 +44,7 @@ impl Screen {
                     self.line_top -= if self.line_top != 0 { 1 } else { 0 };
                 }
             }
-            (_, _) => {
+            (_, true) => {
                 file[self.line].remove(self.pos - 1);
                 self.pos -= 1;
             }
@@ -65,7 +65,6 @@ impl Screen {
     }
 
     pub fn write_term(&mut self, file: &Vec<String>, plugin: Option<toml::Value>) {
-        let mut stdout = stdout();
         let size = terminal::size().unwrap();
         let mut print_file = if self.line_bottom < file.len() {
             format!("\n{}", file[self.line_top..self.line_bottom].join("\n"))
@@ -83,7 +82,7 @@ impl Screen {
             .checked_sub(self.info_line.len())
             .expect("Can't Get InfoLine To End Of Screen");
         execute!(
-            stdout,
+            stdout(),
             terminal::Clear(All),
             cursor::MoveTo(0, 0),
             style::Print(format!("\x1b[\x35 q{print_file}")),
@@ -184,9 +183,7 @@ impl Screen {
         let mut stdout = stdout();
         let mut command = "".to_string();
         let mut size = terminal::size().unwrap();
-        let mut rest_of_screen = (size.0 as usize)
-            .checked_sub(9)
-            .expect("Can't Get InfoLine To End Of Screen");
+        let mut rest_of_screen = size.0.checked_sub(9).unwrap_or_default() as usize;
         execute!(
             stdout,
             cursor::MoveTo(0, size.1),

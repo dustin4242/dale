@@ -36,8 +36,8 @@ fn main() {
         }
     }
     let file_name = file_path.split("/").last().unwrap();
-    let plugins_dir = format!("{}/.config/dale/plugins", env::var("HOME").unwrap());
     let plugin: Option<toml::Value> = if file_name.contains(".") {
+        let plugins_dir = format!("{}/.config/dale/plugins", env::var("HOME").unwrap());
         let plugin_extension = file_name.split(".").last().unwrap();
         let plugin_file =
             fs::read_to_string(format!("{}/{}.toml", plugins_dir, plugin_extension).as_str()).ok();
