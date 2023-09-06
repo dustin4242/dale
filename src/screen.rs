@@ -12,6 +12,7 @@ pub struct Screen {
     pub line_top: usize,
     pub line_bottom: usize,
     pub info_line: String,
+    pub screen_update: bool,
 }
 
 impl Screen {
@@ -22,12 +23,14 @@ impl Screen {
             line_top: 0,
             line_bottom,
             info_line,
+            screen_update: true,
         }
     }
 
     fn add_char(&mut self, file: &mut Vec<String>, char: char) {
         file.get_mut(self.line).unwrap().insert(self.pos, char);
         self.pos += 1;
+        self.screen_update = true;
     }
 
     fn remove_char(&mut self, file: &mut Vec<String>) {
@@ -43,10 +46,12 @@ impl Screen {
                     self.line_bottom -= 1;
                     self.line_top -= if self.line_top != 0 { 1 } else { 0 };
                 }
+                self.screen_update = true;
             }
             (_, true) => {
                 file[self.line].remove(self.pos - 1);
                 self.pos -= 1;
+                self.screen_update = true;
             }
         }
     }
@@ -62,39 +67,43 @@ impl Screen {
             self.line_top += 1;
             self.line_bottom += 1;
         }
+        self.screen_update = true;
     }
 
     pub fn write_term(&mut self, file: &Vec<String>, plugin: Option<toml::Value>) {
-        let size = terminal::size().unwrap();
-        let mut print_file = if self.line_bottom < file.len() {
-            format!("\n{}", file[self.line_top..self.line_bottom].join("\n"))
-        } else {
-            self.line_top -= if self.line_top >= self.line_bottom - file.len() {
-                self.line_bottom - file.len()
+        if self.screen_update == true {
+            let size = terminal::size().unwrap();
+            let mut print_file = if self.line_bottom < file.len() {
+                format!("\n{}", file[self.line_top..self.line_bottom].join("\n"))
             } else {
-                self.line_top
+                self.line_top -= if self.line_top >= self.line_bottom - file.len() {
+                    self.line_bottom - file.len()
+                } else {
+                    self.line_top
+                };
+                self.line_bottom = file.len();
+                format!("\n{}", file[self.line_top..self.line_bottom].join("\n"))
             };
-            self.line_bottom = file.len();
-            format!("\n{}", file[self.line_top..self.line_bottom].join("\n"))
-        };
-        print_file = crate::syntax::highlight(plugin, print_file);
-        let rest_of_screen = (size.0 as usize)
-            .checked_sub(self.info_line.len())
-            .expect("Can't Get InfoLine To End Of Screen");
-        execute!(
-            stdout(),
-            terminal::Clear(All),
-            cursor::MoveTo(0, 0),
-            style::Print(format!("\x1b[\x35 q{print_file}")),
-            cursor::MoveTo(0, size.1 - 1),
-            style::Print(format!(
-                "\x1b[44m\x1b[30m\n{}{}\x1b[37m\x1b[40m",
-                self.info_line,
-                " ".repeat(rest_of_screen)
-            )),
-            cursor::MoveTo(self.pos as u16, (self.line - self.line_top) as u16)
-        )
-        .unwrap();
+            print_file = crate::syntax::highlight(plugin, print_file);
+            let rest_of_screen = (size.0 as usize)
+                .checked_sub(self.info_line.len())
+                .expect("Can't Get InfoLine To End Of Screen");
+            execute!(
+                stdout(),
+                terminal::Clear(All),
+                cursor::MoveTo(0, 0),
+                style::Print(format!("\x1b[\x35 q{print_file}")),
+                cursor::MoveTo(0, size.1 - 1),
+                style::Print(format!(
+                    "\x1b[44m\x1b[30m\n{}{}\x1b[37m\x1b[40m",
+                    self.info_line,
+                    " ".repeat(rest_of_screen)
+                )),
+                cursor::MoveTo(self.pos as u16, (self.line - self.line_top) as u16)
+            )
+            .unwrap();
+            self.screen_update = false;
+        }
     }
 
     pub fn handle_event(&mut self, file: &mut Vec<String>, file_path: &String) {
@@ -136,6 +145,7 @@ impl Screen {
             KC::Tab => {
                 file[self.line].push_str("    ");
                 self.pos += 4;
+                self.screen_update = true;
             }
             KC::Up => {
                 if self.line > 0 {
@@ -147,6 +157,7 @@ impl Screen {
                         self.line_top -= 1;
                         self.line_bottom -= 1;
                     }
+                    self.screen_update = true;
                 }
             }
             KC::Down => {
@@ -159,16 +170,19 @@ impl Screen {
                         self.line_top += 1;
                         self.line_bottom += 1;
                     }
+                    self.screen_update = true;
                 }
             }
             KC::Right => {
                 if self.pos < file[self.line].len() {
                     self.pos += 1;
+                    self.screen_update = true;
                 }
             }
             KC::Left => {
                 if self.pos != 0 {
                     self.pos -= 1;
+                    self.screen_update = true;
                 }
             }
             KC::Esc => {
@@ -184,6 +198,7 @@ impl Screen {
         let mut command = "".to_string();
         let mut size = terminal::size().unwrap();
         let mut rest_of_screen = size.0.checked_sub(9).unwrap_or_default() as usize;
+        self.screen_update = true;
         execute!(
             stdout,
             cursor::MoveTo(0, size.1),
