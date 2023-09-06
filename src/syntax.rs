@@ -13,21 +13,25 @@ pub fn highlight(plugin: Option<toml::Value>, mut file: String) -> String {
                 .get("keywords")
                 .unwrap_or(&empty_array)
                 .as_array()
-                .unwrap();
+                .expect("keywords in syntax toml is not an array");
             let types = basic_table
                 .get("types")
                 .unwrap_or(&empty_array)
                 .as_array()
-                .unwrap();
+                .expect("keywords in syntax toml is not an array");
             for key in keywords {
-                let replace = key.as_str().unwrap();
+                let replace = key
+                    .as_str()
+                    .expect("keywords in syntax toml is not an array of strings");
                 replace_syntax.insert(
                     format!(r"\b{replace}\b"),
                     format!("\x1b[32m{replace}\x1b[37m"),
                 );
             }
             for key_type in types {
-                let replace = key_type.as_str().unwrap();
+                let replace = key_type
+                    .as_str()
+                    .expect("keywords in syntax toml is not an array of strings");
                 replace_syntax.insert(
                     format!(r"\b{replace}\b"),
                     format!("\x1b[33m{replace}\x1b[37m"),
@@ -39,7 +43,14 @@ pub fn highlight(plugin: Option<toml::Value>, mut file: String) -> String {
                     .replace_all(&file, replace.1)
                     .to_string()
             }
-            basic_op(basic_table, &mut file, "numbers", r"\b\d+\b", "magenta", 0);
+            basic_op(
+                basic_table,
+                &mut file,
+                "numbers",
+                r"\b\d+(\.\d+)?\b",
+                "magenta",
+                0,
+            );
             basic_op(
                 basic_table,
                 &mut file,
@@ -75,7 +86,7 @@ fn basic_op<T: ToString>(
         .get(option_name.to_string())
         .unwrap_or(&Value::Boolean(false))
         .as_bool()
-        .unwrap();
+        .expect("Option {option_name} is not a bool in syntax toml");
     if option {
         match color {
             "red" => color = "\x1b[31m",
