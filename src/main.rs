@@ -4,12 +4,11 @@ use std::{env, fs};
 mod screen;
 mod syntax;
 use screen::Screen;
+use syntax::load_syntax;
 
 fn main() {
     let temp_path = env::args().nth(1);
-    let isrootdir: bool;
-    let ishomedir: bool;
-    let file_path: String;
+    let (isrootdir, ishomedir, file_path): (bool, bool, String);
     match temp_path {
         None => {
             println!("Usage: dale [FILE_PATH]");
@@ -36,15 +35,17 @@ fn main() {
         }
     }
     let file_name = file_path.split("/").last().unwrap();
-    let plugin: Option<toml::Value> = if file_name.contains(".") {
+    let plugin: Option<toml::Table> = if file_name.contains(".") {
         let plugins_dir = format!("{}/.config/dale/plugins", env::var("HOME").unwrap());
         let plugin_extension = file_name.split(".").last().unwrap();
         let plugin_file =
             fs::read_to_string(format!("{}/{}.toml", plugins_dir, plugin_extension).as_str()).ok();
         match plugin_file {
-            Some(x) => toml::from_str(&x).expect(
-                format!("Plugin Toml File Unable To Be Parsed For .{plugin_extension} Files")
-                    .as_str(),
+            Some(x) => Some(
+                x.parse::<toml::Table>().expect(
+                    format!("Plugin Toml File Unable To Be Parsed For .{plugin_extension} Files")
+                        .as_str(),
+                ),
             ),
             None => None,
         }
@@ -70,13 +71,14 @@ fn main() {
         },
         file_path.split("/").last().unwrap().to_owned(),
     );
-    screen.write_term(&file, plugin.to_owned());
+    screen.syntax = load_syntax(plugin);
+    screen.write_term(&file);
     loop {
         if term_size.1 as usize > file.len() {
             screen.line_top = 0;
             screen.line_bottom = file.len();
         }
         screen.handle_event(&mut file, &file_path);
-        screen.write_term(&file, plugin.to_owned());
+        screen.write_term(&file);
     }
 }

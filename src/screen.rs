@@ -2,6 +2,7 @@ use std::io::stdout;
 use std::process::Command;
 use std::{fs, process::exit};
 
+use crate::syntax::Syntax;
 use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyEventState, KeyModifiers};
 use crossterm::{cursor, event, execute, style, terminal};
 use crossterm::{event::Event, terminal::ClearType::All};
@@ -13,6 +14,7 @@ pub struct Screen {
     pub line_bottom: usize,
     pub info_line: String,
     pub screen_update: bool,
+    pub syntax: Option<Syntax>,
 }
 
 impl Screen {
@@ -24,6 +26,7 @@ impl Screen {
             line_bottom,
             info_line,
             screen_update: true,
+            syntax: None,
         }
     }
 
@@ -70,7 +73,7 @@ impl Screen {
         self.screen_update = true;
     }
 
-    pub fn write_term(&mut self, file: &Vec<String>, plugin: Option<toml::Value>) {
+    pub fn write_term(&mut self, file: &Vec<String>) {
         if self.screen_update == true {
             let size = terminal::size().unwrap();
             let mut print_file = if self.line_bottom < file.len() {
@@ -84,7 +87,9 @@ impl Screen {
                 self.line_bottom = file.len();
                 format!("\n{}", file[self.line_top..self.line_bottom].join("\n"))
             };
-            print_file = crate::syntax::highlight(plugin, print_file);
+            if self.syntax.is_some() {
+                print_file = crate::syntax::highlight(self.syntax.as_ref().unwrap(), print_file);
+            }
             let rest_of_screen = (size.0 as usize)
                 .checked_sub(self.info_line.len())
                 .expect("Can't Get InfoLine To End Of Screen");

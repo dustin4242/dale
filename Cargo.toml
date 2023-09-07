@@ -19,4 +19,4 @@ strip = true
 [dependencies]
 crossterm = "0.27.0"
 regex = "1.9.5"
-toml = "0.7.5"
+toml = "0.7.6"
