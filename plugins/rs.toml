@@ -1,6 +1,39 @@
 [basic]
-keywords = ["use", "let", "fn", "impl", "for", "in", "pub", "loop", "mod", "if", "else", "match"]
-types = ["str", "String", "u32", "f32", "u8", "u16", "f8", "f16", "Vec"]
+keywords = [
+  "use",
+  "let",
+  "fn",
+  "impl",
+  "for",
+  "in",
+  "pub",
+  "loop",
+  "mod",
+  "if",
+  "else",
+  "match",
+]
+types = [
+  "str",
+  "String",
+  "usize",
+  "isize",
+  "fsize",
+  "u64",
+  "f64",
+  "i64",
+  "u32",
+  "f32",
+  "i32",
+  "u16",
+  "f16",
+  "i16",
+  "u8",
+  "f8",
+  "i8",
+  "Vec",
+  "bool",
+]
 strings = true
 functions = true
 numbers = true
