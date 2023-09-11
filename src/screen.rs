@@ -1,3 +1,4 @@
+use std::char;
 use std::io::stdout;
 use std::process::Command;
 use std::{fs, process::exit};
@@ -60,10 +61,17 @@ impl Screen {
     }
 
     fn newline(&mut self, file: &mut Vec<String>) {
-        let current_line = file[self.line].clone();
-        let new_lines = current_line.split_at(self.pos);
-        file[self.line] = new_lines.0.to_string();
-        file.insert(self.line + 1, new_lines.1.to_string());
+        let line_length = file[self.line].len();
+        if self.pos != line_length {
+            let current_line = file[self.line].clone();
+            let new_lines = current_line.split_at(self.pos);
+            file[self.line] = new_lines.0.to_string();
+            file.insert(self.line + 1, new_lines.1.to_string());
+        } else if self.pos == 0 {
+            file.insert(self.line, String::new());
+        } else {
+            file.insert(self.line + 1, String::new());
+        }
         self.line += 1;
         self.pos = 0;
         if self.line == self.line_bottom {
