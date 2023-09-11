@@ -81,7 +81,7 @@ impl Screen {
         self.screen_update = true;
     }
 
-    pub fn write_term(&mut self, file: &Vec<String>) {
+    pub fn write_term(&mut self, file: &Vec<String>) -> Option<()> {
         if self.screen_update == true {
             let size = terminal::size().unwrap();
             let mut print_file = if self.line_bottom < file.len() {
@@ -96,8 +96,7 @@ impl Screen {
                 format!("\n{}", file[self.line_top..self.line_bottom].join("\n"))
             };
             if self.syntax.is_some() {
-                print_file =
-                    crate::syntax::highlight(self.syntax.as_ref().unwrap(), print_file).unwrap();
+                print_file = crate::syntax::highlight(self.syntax.as_ref()?, print_file)?;
             }
             let rest_of_screen = (size.0 as usize)
                 .checked_sub(self.info_line.len())
@@ -118,6 +117,7 @@ impl Screen {
             .unwrap();
             self.screen_update = false;
         }
+        Some(())
     }
 
     pub fn handle_event(&mut self, file: &mut Vec<String>, file_path: &String) {
@@ -137,7 +137,7 @@ impl Screen {
                 modifiers: KeyModifiers::CONTROL,
                 kind: KeyEventKind::Press,
                 state: KeyEventState::NONE,
-            }) => self.command_handler(),
+            }) => self.command_handler().unwrap(),
             Event::Key(key) => self.handle_key(key.code, file, file_path),
             Event::Resize(_, y) => {
                 self.line_bottom = self.line_top + y as usize - 1;
@@ -207,11 +207,11 @@ impl Screen {
             _ => (),
         }
     }
-    pub fn command_handler(&mut self) {
+    pub fn command_handler(&mut self) -> Result<(), std::io::Error> {
         let mut stdout = stdout();
-        let mut command = "".to_string();
-        let mut size = terminal::size().unwrap();
-        let mut rest_of_screen = size.0.checked_sub(9).unwrap_or_default() as usize;
+        let mut command = String::new();
+        let mut size = terminal::size()?;
+        let mut rest_of_screen = size.0.checked_sub(9).unwrap_or(0) as usize;
         self.screen_update = true;
         execute!(
             stdout,
@@ -222,10 +222,9 @@ impl Screen {
                 " ".repeat(rest_of_screen)
             )),
             cursor::MoveTo(9, size.1)
-        )
-        .unwrap();
+        )?;
         loop {
-            size = terminal::size().unwrap();
+            size = terminal::size()?;
             match event::read().expect("Unable To Read Events") {
                 Event::Key(key) => match key.code {
                     KeyCode::Char(c) => {
@@ -241,8 +240,7 @@ impl Screen {
                                 " ".repeat(rest_of_screen)
                             )),
                             cursor::MoveTo(9 + command.len() as u16, size.1)
-                        )
-                        .unwrap();
+                        )?;
                     }
                     KeyCode::Backspace => {
                         if command.pop() != None {
@@ -258,10 +256,9 @@ impl Screen {
                                 " ".repeat(rest_of_screen)
                             )),
                             cursor::MoveTo(9 + command.len() as u16, size.1)
-                        )
-                        .unwrap();
+                        )?;
                     }
-                    KeyCode::Esc => return,
+                    KeyCode::Esc => return Ok(()),
                     KeyCode::Enter => break,
                     _ => (),
                 },
@@ -269,18 +266,18 @@ impl Screen {
             }
         }
         if command != "".to_owned() {
-            execute!(stdout, terminal::Clear(All), cursor::MoveTo(0, 0)).unwrap();
+            execute!(stdout, terminal::Clear(All), cursor::MoveTo(0, 0))?;
             let mut command_args: Vec<&str> = command.split(" ").collect();
-            terminal::disable_raw_mode().unwrap();
+            terminal::disable_raw_mode()?;
             match Command::new(command_args.remove(0))
                 .args(command_args)
                 .spawn()
             {
                 Ok(mut x) => {
-                    x.wait().unwrap();
-                    execute!(stdout, style::Print("Press ESC to return to editor.")).unwrap();
+                    x.wait()?;
+                    execute!(stdout, style::Print("Press ESC to return to editor."))?;
                     loop {
-                        terminal::enable_raw_mode().unwrap();
+                        terminal::enable_raw_mode()?;
                         match event::read().expect("Unable To Read Events") {
                             Event::Key(key) => match key.code {
                                 KeyCode::Esc => break,
@@ -293,5 +290,6 @@ impl Screen {
                 Err(x) => self.info_line = x.to_string(),
             }
         }
+        Ok(())
     }
 }
