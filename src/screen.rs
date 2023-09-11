@@ -96,7 +96,8 @@ impl Screen {
                 format!("\n{}", file[self.line_top..self.line_bottom].join("\n"))
             };
             if self.syntax.is_some() {
-                print_file = crate::syntax::highlight(self.syntax.as_ref().unwrap(), print_file);
+                print_file =
+                    crate::syntax::highlight(self.syntax.as_ref().unwrap(), print_file).unwrap();
             }
             let rest_of_screen = (size.0 as usize)
                 .checked_sub(self.info_line.len())

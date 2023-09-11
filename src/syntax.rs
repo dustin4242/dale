@@ -63,8 +63,7 @@ pub fn load_syntax(plugin: Option<toml::Table>) -> Option<Syntax> {
             match custom_table.as_table() {
                 Some(table) => {
                     for syntax in table {
-                        custom_replace
-                            .push((syntax.0.to_owned(), syntax.1.as_str().unwrap().to_owned()));
+                        custom_replace.push((syntax.0.to_owned(), syntax.1.as_str()?.to_owned()));
                     }
                 }
                 None => (),
@@ -79,7 +78,7 @@ pub fn load_syntax(plugin: Option<toml::Table>) -> Option<Syntax> {
     }
 }
 
-pub fn highlight(plugin: &Syntax, mut file: String) -> String {
+pub fn highlight(plugin: &Syntax, mut file: String) -> Option<String> {
     for replace in plugin.replace.clone() {
         file = Regex::new(replace.0.as_str())
             .unwrap()
@@ -87,28 +86,22 @@ pub fn highlight(plugin: &Syntax, mut file: String) -> String {
             .to_string()
     }
     basic_op(
-        plugin.options.get(0).unwrap(),
+        plugin.options.get(0)?,
         &mut file,
         r"\b\d+(\.\d+)?\b",
         "magenta",
         0,
     );
     basic_op(
-        plugin.options.get(1).unwrap(),
+        plugin.options.get(1)?,
         &mut file,
         "\"+[^\"]*\"*",
         "magenta",
         0,
     );
-    basic_op(
-        plugin.options.get(2).unwrap(),
-        &mut file,
-        r"[\w\d]+\(+",
-        "cyan",
-        -1,
-    );
+    basic_op(plugin.options.get(2)?, &mut file, r"[\w\d]+\(+", "cyan", -1);
     custom_op(plugin.custom.clone(), &mut file);
-    file
+    Some(file)
 }
 
 fn basic_op(
