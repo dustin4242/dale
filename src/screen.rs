@@ -256,12 +256,12 @@ impl Screen {
 fn write_infoline(info: String) {
     let size = terminal::size().unwrap();
     let rest_of_screen = size.0.checked_sub((info.len()) as u16).unwrap_or(0) as usize;
+    let infoline_color = "\x1b[44m";
     execute!(
         stdout(),
-        cursor::MoveTo(0, size.1),
+        cursor::MoveTo(0, size.1 - 1),
         style::Print(format!(
-            "\x1b[44m\x1b[30m{}{}\x1b[37m\x1b[40m",
-            info,
+            "{infoline_color}\x1b[30m{info}{}\x1b[37m\x1b[40m",
             " ".repeat(rest_of_screen)
         )),
         cursor::MoveTo(info.len() as u16, size.1)
