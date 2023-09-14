@@ -83,7 +83,6 @@ impl Screen {
 
     pub fn write_term(&mut self, file: &Vec<String>) -> Option<()> {
         if self.screen_update == true {
-            let size = terminal::size().unwrap();
             let mut print_file = if self.line_bottom < file.len() {
                 format!("\n{}", file[self.line_top..self.line_bottom].join("\n"))
             } else {
@@ -98,20 +97,16 @@ impl Screen {
             if self.syntax.is_some() {
                 print_file = crate::syntax::highlight(self.syntax.as_ref()?, print_file)?;
             }
-            let rest_of_screen = (size.0 as usize)
-                .checked_sub(self.info_line.len())
-                .expect("Can't Get InfoLine To End Of Screen");
             execute!(
                 stdout(),
                 terminal::Clear(All),
                 cursor::MoveTo(0, 0),
                 style::Print(format!("\x1b[\x35 q{print_file}")),
-                cursor::MoveTo(0, size.1 - 1),
-                style::Print(format!(
-                    "\x1b[44m\x1b[30m\n{}{}\x1b[37m\x1b[40m",
-                    self.info_line,
-                    " ".repeat(rest_of_screen)
-                )),
+            )
+            .unwrap();
+            write_infoline(format!("\n{}", self.info_line.to_owned()));
+            execute!(
+                stdout(),
                 cursor::MoveTo(self.pos as u16, (self.line - self.line_top) as u16)
             )
             .unwrap();
@@ -210,53 +205,18 @@ impl Screen {
     pub fn command_handler(&mut self) -> Result<(), std::io::Error> {
         let mut stdout = stdout();
         let mut command = String::new();
-        let mut size = terminal::size()?;
-        let mut rest_of_screen = size.0.checked_sub(9).unwrap_or(0) as usize;
         self.screen_update = true;
-        execute!(
-            stdout,
-            cursor::MoveTo(0, size.1),
-            terminal::Clear(terminal::ClearType::CurrentLine),
-            style::Print(format!(
-                "\x1b[44m\x1b[30mCommand: {}\x1b[37m\x1b[40m",
-                " ".repeat(rest_of_screen)
-            )),
-            cursor::MoveTo(9, size.1)
-        )?;
+        write_infoline("Command: ".to_string());
         loop {
-            size = terminal::size()?;
             match event::read().expect("Unable To Read Events") {
                 Event::Key(key) => match key.code {
                     KeyCode::Char(c) => {
-                        rest_of_screen -= 1;
                         command.push(c);
-                        execute!(
-                            stdout,
-                            cursor::MoveTo(0, size.1),
-                            terminal::Clear(terminal::ClearType::CurrentLine),
-                            style::Print(format!(
-                                "\x1b[44m\x1b[30mCommand: {}{}\x1b[37m\x1b[40m",
-                                command,
-                                " ".repeat(rest_of_screen)
-                            )),
-                            cursor::MoveTo(9 + command.len() as u16, size.1)
-                        )?;
+                        write_infoline(format!("Command: {}", command.to_owned()));
                     }
                     KeyCode::Backspace => {
-                        if command.pop() != None {
-                            rest_of_screen += 1;
-                        }
-                        execute!(
-                            stdout,
-                            cursor::MoveTo(0, size.1),
-                            terminal::Clear(terminal::ClearType::CurrentLine),
-                            style::Print(format!(
-                                "\x1b[44m\x1b[30mCommand: {}{}\x1b[37m\x1b[40m",
-                                command,
-                                " ".repeat(rest_of_screen)
-                            )),
-                            cursor::MoveTo(9 + command.len() as u16, size.1)
-                        )?;
+                        command.pop();
+                        write_infoline(format!("Command: {}", command.to_owned()));
                     }
                     KeyCode::Esc => return Ok(()),
                     KeyCode::Enter => break,
@@ -292,4 +252,19 @@ impl Screen {
         }
         Ok(())
     }
+}
+fn write_infoline(info: String) {
+    let size = terminal::size().unwrap();
+    let rest_of_screen = size.0.checked_sub((info.len()) as u16).unwrap_or(0) as usize;
+    execute!(
+        stdout(),
+        cursor::MoveTo(0, size.1),
+        style::Print(format!(
+            "\x1b[44m\x1b[30m{}{}\x1b[37m\x1b[40m",
+            info,
+            " ".repeat(rest_of_screen)
+        )),
+        cursor::MoveTo(info.len() as u16, size.1)
+    )
+    .unwrap();
 }
