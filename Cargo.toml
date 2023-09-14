@@ -1,6 +1,6 @@
 [package]
 name = "dale"
-version = "0.1.8"
+version = "0.1.9"
 edition = "2021"
 description = "Dustin's Awesome Line Editor"
 license = "GPL-3.0-only"

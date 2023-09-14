@@ -14,6 +14,7 @@ pub struct Screen {
     pub line_top: usize,
     pub line_bottom: usize,
     pub info_line: String,
+    pub changed: bool,
     pub screen_update: bool,
     pub syntax: Option<Syntax>,
 }
@@ -26,6 +27,7 @@ impl Screen {
             line_top: 0,
             line_bottom,
             info_line,
+            changed: false,
             screen_update: true,
             syntax: None,
         }
@@ -34,6 +36,7 @@ impl Screen {
     fn add_char(&mut self, file: &mut Vec<String>, char: char) {
         file.get_mut(self.line).unwrap().insert(self.pos, char);
         self.pos += 1;
+        self.changed = true;
         self.screen_update = true;
     }
 
@@ -50,11 +53,13 @@ impl Screen {
                     self.line_bottom -= 1;
                     self.line_top -= if self.line_top != 0 { 1 } else { 0 };
                 }
+                self.changed = true;
                 self.screen_update = true;
             }
             (_, true) => {
                 file[self.line].remove(self.pos - 1);
                 self.pos -= 1;
+                self.changed = true;
                 self.screen_update = true;
             }
         }
@@ -78,6 +83,7 @@ impl Screen {
             self.line_top += 1;
             self.line_bottom += 1;
         }
+        self.changed = true;
         self.screen_update = true;
     }
 
@@ -125,7 +131,10 @@ impl Screen {
                 state: KeyEventState::NONE,
             }) => match fs::write(file_path, format!("{}\n", file.join("\n"))) {
                 Err(_) => self.info_line = "Unable To Save Contents".to_owned(),
-                Ok(_) => self.info_line = "Saved Contents".to_owned(),
+                Ok(_) => {
+                    self.changed = false;
+                    self.info_line = "Saved Contents".to_owned()
+                }
             },
             Event::Key(KeyEvent {
                 code: KeyCode::Char('r'),
@@ -195,6 +204,36 @@ impl Screen {
                 }
             }
             KC::Esc => {
+                if self.changed == true {
+                    let output = "Unsaved Changes are you sure you want to exit? (y/n): ";
+                    let mut answer = String::new();
+                    write_infoline(format!("{output}{}", answer.to_owned()));
+                    loop {
+                        match event::read().expect("Unable To Read Events") {
+                            Event::Key(key) => match key.code {
+                                KeyCode::Char(c) => {
+                                    answer.push(c);
+                                    write_infoline(format!("{output}{}", answer.to_owned()));
+                                }
+                                KeyCode::Backspace => {
+                                    answer.pop();
+                                    write_infoline(format!("{output}{}", answer.to_owned()));
+                                }
+                                KeyCode::Esc => return,
+                                KeyCode::Enter => break,
+                                _ => (),
+                            },
+                            _ => (),
+                        }
+                    }
+                    match answer.to_lowercase().as_str() {
+                        "y" | "yes" => (),
+                        _ => {
+                            self.screen_update = true;
+                            return;
+                        }
+                    }
+                }
                 execute!(stdout(), terminal::Clear(All), cursor::MoveTo(0, 0)).unwrap();
                 terminal::disable_raw_mode().unwrap();
                 exit(0);
