@@ -107,10 +107,10 @@ impl Screen {
                 stdout(),
                 terminal::Clear(All),
                 cursor::MoveTo(0, 0),
-                style::Print(format!("\x1b[\x35 q{print_file}")),
+                style::Print(format!("\x1b[\x35 q{print_file}\n")),
             )
             .unwrap();
-            write_infoline(format!("\n{}", self.info_line.to_owned()));
+            write_infoline(format!("{}", self.info_line.to_owned()));
             execute!(
                 stdout(),
                 cursor::MoveTo(self.pos as u16, (self.line - self.line_top) as u16)
